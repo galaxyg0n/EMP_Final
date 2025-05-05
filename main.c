@@ -31,8 +31,9 @@ void init_hardware()
 
 int main(void)
 {
-    xTaskCreate(LCD_task,"LCD",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+    setup();
 
-    vTaskStartScheduler();
+    xTaskCreate();
+
 	return 0;
 }
