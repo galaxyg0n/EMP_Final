@@ -20,7 +20,6 @@
 /***************************** Include files *******************************/
 #include <stdint.h>
 #include "tm4c123gh6pm.h"
-// #include "emp_type.h"
 /*****************************    Defines    *******************************/
 
 #define SYSTICK_RELOAD_VALUE 80000              // 5 mS

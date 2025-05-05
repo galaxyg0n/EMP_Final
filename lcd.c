@@ -168,6 +168,7 @@ void LCD_task(void* pvParameters)
     while(1)
     {
         str[6] = ++count + '0';
+        lcd_clear();
         lcd_print_str(str);
         vTaskDelay(200/portTICK_RATE_MS);
     }
