@@ -14,6 +14,7 @@
 #include "lcd.h"
 #include "glob_def.h"
 #include "button.h"
+#include "master_control.h"
 #include "tm4c123gh6pm.h"
 
 //Defines
@@ -29,6 +30,7 @@
 //FreeRTOS handles
 QueueHandle_t LCD_Q, SW1_E_Q;
 TimerHandle_t sw1_timer;
+SemaphoreHandle_t E_MOVE_MUTEX;
 
 void init_hardware()
 {
@@ -45,8 +47,11 @@ int main(void)
 
     LCD_Q = xQueueCreate(16,sizeof(LCD_Put));
 
+    E_MOVE_MUTEX = xSemaphoreCreateMutex();
+
     xTaskCreate(LCD_task,"LCD",USERTASK_STACK_SIZE,NULL,MED_PRIO,NULL);
     xTaskCreate(sw1_task,"BUTTON",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+    xTaskCreate(master_control_task,"MASTER_CONTROL",USERTASK_STACK_SIZE,NULL,HIGH_PRIO,NULL);
 
     vTaskStartScheduler();
 

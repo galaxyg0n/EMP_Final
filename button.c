@@ -47,9 +47,6 @@ void init_button()
  * Task: Takes button inputs and return the appropriate event
  * Output: Either single press, double press or long press
  --------------------------*/
-LCD_Put test_put = {1,2,"Test"};
-LCD_Put test_clear = {3,3,"clc"};
-static uint8_t send_test_state = 0;
 void sw1_task(void* pvParameters)
 {
     static enum BUTTON_STATES sw1_state = BS_IDLE;
@@ -88,11 +85,7 @@ void sw1_task(void* pvParameters)
        }
 
        if (be) //If at button event is set, sends that to the button event queue
-       {
-           //xQueueSendToBack(SW1_E_Q,&be,portMAX_DELAY);
-           send_test_state ^= 1;
-           xQueueSendToBack(LCD_Q,send_test_state? &test_put:&test_clear,portMAX_DELAY);
-       }
+           xQueueSendToBack(SW1_E_Q,&be,portMAX_DELAY);
     }
 }
 

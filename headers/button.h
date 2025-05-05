@@ -9,6 +9,7 @@
 #define BUTTON_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "tm4c123gh6pm.h"
 #include "systick_frt.h"
 #include "FreeRTOS.h"
