@@ -9,13 +9,23 @@
 
 #define TRIPS_TO_BREAK 4
 
-extern QueueHandle_t SW1_E_Q, LCD_Q;
+extern QueueHandle_t SW1_E_Q;
 extern SemaphoreHandle_t E_MOVE_MUTEX;
+
+uint8_t input_key()
+{
+    return 0; //Test right now
+}
 
 void master_control_task(void* pvParameters)
 {
+
+    static uint8_t str[16];
+    const size_t size = sizeof(str);
+
     static enum CONT_STATES {E_STILL,E_ARRIVED,E_PASS,E_MOVING,E_BROKEN} cont_state = E_STILL;
     static uint8_t trips = 1;
+    xSemaphoreTake(E_MOVE_MUTEX,portMAX_DELAY);
     while(1)
     {
         enum BUTTON_EVENTS be = BE_NO;
@@ -36,12 +46,33 @@ void master_control_task(void* pvParameters)
             cont_state = E_ARRIVED;
             break;
         case E_ARRIVED:
+            LCD_queue_put(1,2,"Arrived!       ");
+            vTaskDelay(750/portTICK_RATE_MS);
             if (!(trips%TRIPS_TO_BREAK))
                 cont_state = E_BROKEN;
             else
                 cont_state = E_PASS;
             break;
         case E_BROKEN:
+            break;
+        case E_PASS:
+            LCD_queue_put(1,1,"clc");
+            LCD_queue_put(1,1,"Password req.:");
+            LCD_queue_put(1,2,"Enter: ");
+            uint16_t password = 0;
+            uint16_t pass_pos = 1000;
+            uint8_t num_length = 0;
+            uint8_t entered_val = 0;
+            for (num_length = 0; num_length<4; num_length++)
+            {
+                entered_val = input_key();
+                pass_pos /= 10;
+                password = (entered_val-'0')*pass_pos;
+                snprintf(str,size,"%c",entered_val);
+                LCD_queue_put(7+num_length,2,str);
+            }
+            if (!(entered_val%8))
+                cont_state = E_STILL;
             break;
         default:
             break;

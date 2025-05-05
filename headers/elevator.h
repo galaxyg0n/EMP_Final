@@ -8,6 +8,7 @@
 #ifndef HEADERS_ELEVATOR_H_
 #define HEADERS_ELEVATOR_H_
 
+#include <stdio.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -19,5 +20,6 @@
 #include "master_control.h"
 #include "tm4c123gh6pm.h"
 
+void elevator_task(void* pvParameters);
 
 #endif /* HEADERS_ELEVATOR_H_ */

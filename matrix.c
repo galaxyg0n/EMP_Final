@@ -58,8 +58,6 @@ void sweep_keypad_task(void *pvParameters)
 
         }
     }
-
-    return 0;
 }
 
 

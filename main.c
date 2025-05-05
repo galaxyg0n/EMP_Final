@@ -18,6 +18,7 @@
 #include "lcd.h"
 #include "matrix.h"
 #include "uart.h"
+#include "elevator.h"
 
 #include "master_control.h"
 #include "tm4c123gh6pm.h"
@@ -42,8 +43,8 @@ SemaphoreHandle_t E_MOVE_MUTEX;
 void init_hardware()
 {
     init_button();
-    init_matrix();
-    uart_init(9600, 8, NO_PARITY, 1);
+    //init_matrix();
+    //uart_init(9600, 8, NO_PARITY, 1);
 
     init_systick();
 }
@@ -60,6 +61,7 @@ int main(void)
 
     E_MOVE_MUTEX = xSemaphoreCreateMutex();
 
+
     xTaskCreate(LCD_task, "LCD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
     xTaskCreate(sw1_task, "BUTTON", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
 
@@ -67,7 +69,8 @@ int main(void)
     xTaskCreate(keypad_consumer_task, "KEYPAD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
     xTaskCreate(uart_tx_task, "UART_TX", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL );
 
-    xTaskCreate(master_control_task,"MASTER_CONTROL",USERTASK_STACK_SIZE,NULL,HIGH_PRIO,NULL);
+    xTaskCreate(master_control_task,"MASTER_CONTROL",USERTASK_STACK_SIZE,NULL,HIGH_PRIO+1,NULL);
+    xTaskCreate(elevator_task,"ELEVATOR",USERTASK_STACK_SIZE,NULL,HIGH_PRIO,NULL);
 
     vTaskStartScheduler();
 	return 0;
