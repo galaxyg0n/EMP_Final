@@ -13,12 +13,15 @@
 
 /***************** Includes *******************/
 #include <stdint.h>
+#include <string.h>
 #include "tm4c123gh6pm.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
 #include "semphr.h"
+#include "glob_def.h"
+
 
 /***************** Defines ********************/
 /***************** Const. *********************/

@@ -46,6 +46,8 @@
 
 /***************** Const. *********************/
 /***************** Variables ******************/
+extern QueueHandle_t LCD_Q;
+
 
 /***************** Functions ******************/
 static void toggle_E()
@@ -162,14 +164,18 @@ void LCD_task(void* pvParameters)
 {
     init_lcd();
 
-    static uint8_t count;
-    static uint8_t str[] = "Count: ";
+    static LCD_Put to_write;
+    static uint8_t clear_cmd[] = "clc";
 
     while(1)
     {
-        str[6] = ++count + '0';
-        lcd_clear();
-        lcd_print_str(str);
-        vTaskDelay(200/portTICK_RATE_MS);
+        xQueueReceive(LCD_Q,&to_write,portMAX_DELAY);
+        if (!strcmp(to_write.str,clear_cmd))
+            lcd_clear();
+        else
+        {
+        lcd_setCursor(to_write.y,to_write.x);
+        lcd_print_str(to_write.str);
+        }
     }
 }

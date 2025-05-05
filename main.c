@@ -12,6 +12,7 @@
 #include "timers.h"
 #include "semphr.h"
 #include "lcd.h"
+#include "glob_def.h"
 
 //Defines
 #define USERTASK_STACK_SIZE configMINIMAL_STACK_SIZE
@@ -23,6 +24,8 @@
 #define MED_PRIO  2
 #define HIGH_PRIO 3
 
+//FreeRTOS handles
+QueueHandle_t LCD_Q;
 
 void init_hardware()
 {
@@ -31,7 +34,9 @@ void init_hardware()
 
 int main(void)
 {
-    xTaskCreate(LCD_task,"LCD",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+    LCD_Q = xQueueCreate(8,sizeof(LCD_Put));
+
+    xTaskCreate(LCD_task,"LCD",USERTASK_STACK_SIZE,NULL,MED_PRIO,NULL);
 
     vTaskStartScheduler();
 	return 0;
