@@ -38,6 +38,5 @@ int main(void)
 
     xTaskCreate(LCD_task,"LCD",USERTASK_STACK_SIZE,NULL,MED_PRIO,NULL);
 
-    vTaskStartScheduler();
 	return 0;
 }
