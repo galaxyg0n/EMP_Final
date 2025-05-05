@@ -16,5 +16,7 @@ typedef struct {
   uint8_t str[16];
 } LCD_Put;
 
+enum BUTTON_STATES {BS_IDLE,BS_FP,BS_LP};
+enum BUTTON_EVENTS {BE_NO, BE_LONG};
 
 #endif /* HEADERS_GLOB_DEF_H_ */

@@ -25,7 +25,8 @@
 #define HIGH_PRIO 3
 
 //FreeRTOS handles
-QueueHandle_t LCD_Q;
+QueueHandle_t LCD_Q, SW1_E_Q;
+TimerHandle_t sw1_timer;
 
 void init_hardware()
 {
@@ -34,9 +35,13 @@ void init_hardware()
 
 int main(void)
 {
-    LCD_Q = xQueueCreate(8,sizeof(LCD_Put));
+    sw1_timer = xTimerCreate("Button_timeout",500/portTICK_RATE_MS,pdFALSE,NULL,button_timer_callback);    //Button specific
+    SW1_E_Q = xQueueCreate(8, sizeof(uint8_t));
+
+    LCD_Q = xQueueCreate(16,sizeof(LCD_Put));
 
     xTaskCreate(LCD_task,"LCD",USERTASK_STACK_SIZE,NULL,MED_PRIO,NULL);
+    xTaskCreate(sw1_task,"BUTTON",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
 
 	return 0;
 }
