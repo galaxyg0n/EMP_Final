@@ -6,14 +6,19 @@
  */
 
 #include "main.h"
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
 #include "semphr.h"
-#include "lcd.h"
+
 #include "glob_def.h"
 #include "button.h"
+#include "lcd.h"
+#include "matrix.h"
+#include "uart.h"
+
 #include "master_control.h"
 #include "tm4c123gh6pm.h"
 
@@ -29,12 +34,17 @@
 
 //FreeRTOS handles
 QueueHandle_t LCD_Q, SW1_E_Q;
+QueueHandle_t MATRIX_Q;
+
 TimerHandle_t sw1_timer;
 SemaphoreHandle_t E_MOVE_MUTEX;
 
 void init_hardware()
 {
     init_button();
+    init_matrix();
+    uart_init(9600, 8, NO_PARITY, 1);
+
     init_systick();
 }
 
@@ -42,18 +52,23 @@ int main(void)
 {
     init_hardware();
 
-    sw1_timer = xTimerCreate("Button_timeout",500/portTICK_RATE_MS,pdFALSE,NULL,button_timer_callback);    //Button specific
-    SW1_E_Q = xQueueCreate(8, sizeof(uint8_t));
+    sw1_timer = xTimerCreate("Button_timeout", 500 / portTICK_RATE_MS, pdFALSE, NULL, button_timer_callback);    //Button specific
 
-    LCD_Q = xQueueCreate(16,sizeof(LCD_Put));
+    SW1_E_Q  = xQueueCreate(8, sizeof(uint8_t));
+    LCD_Q    = xQueueCreate(16, sizeof(LCD_Put));
+    MATRIX_Q = xQueueCreate(10, sizeof(keypadStruct));
 
     E_MOVE_MUTEX = xSemaphoreCreateMutex();
 
-    xTaskCreate(LCD_task,"LCD",USERTASK_STACK_SIZE,NULL,MED_PRIO,NULL);
-    xTaskCreate(sw1_task,"BUTTON",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+    xTaskCreate(LCD_task, "LCD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
+    xTaskCreate(sw1_task, "BUTTON", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
+
+    xTaskCreate(sweep_keypad_task, "SWEEP_KEYPAD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
+    xTaskCreate(keypad_consumer_task, "KEYPAD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
+    xTaskCreate(uart_tx_task, "UART_TX", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL );
+
     xTaskCreate(master_control_task,"MASTER_CONTROL",USERTASK_STACK_SIZE,NULL,HIGH_PRIO,NULL);
 
     vTaskStartScheduler();
-
 	return 0;
 }

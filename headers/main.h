@@ -8,12 +8,14 @@
 #ifndef HEADERS_MAIN_H_
 #define HEADERS_MAIN_H_
 
+#include <LCD.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
 #include "semphr.h"
-#include "lcd.h"
+
+
 
 
 
