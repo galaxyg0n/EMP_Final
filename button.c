@@ -5,8 +5,9 @@
  *      Author: karlj
  */
 #include "button.h"
+#include "lcd.h"
 
-extern QueueHandle_t SW1_E_Q;
+extern QueueHandle_t SW1_E_Q, LCD_Q;
 extern TimerHandle_t sw1_timer;
 uint8_t sw1_timeout;
 
@@ -24,10 +25,31 @@ static void set_timer(TimerHandle_t* xTimer)
     xTimerStart(*xTimer,0);
 }
 
+static uint8_t is_pressed()
+{
+    return !(GPIO_PORTF_DATA_R & SW1);
+}
+
+void init_button()
+{
+    int dummy;
+    SYSCTL_RCGCGPIO_R  |= SYSCTL_RCGC2_GPIOF;
+    dummy = SYSCTL_RCGCGPIO_R;
+
+    GPIO_PORTF_LOCK_R = PORTF_LOCK;   //Unlock GPIO Port F
+    GPIO_PORTF_CR_R |= SW1;           //Allow changes to PF4
+    GPIO_PORTF_DIR_R &= ~(SW1);       //Set as input
+    GPIO_PORTF_DEN_R |= SW1;          //Digital enable
+    GPIO_PORTF_PUR_R |= SW1;          //Internal pull-up resistor
+}
+
 /*---------------------------
  * Task: Takes button inputs and return the appropriate event
  * Output: Either single press, double press or long press
  --------------------------*/
+LCD_Put test_put = {1,2,"Test"};
+LCD_Put test_clear = {3,3,"clc"};
+static uint8_t send_test_state = 0;
 void sw1_task(void* pvParameters)
 {
     static enum BUTTON_STATES sw1_state = BS_IDLE;
@@ -55,7 +77,7 @@ void sw1_task(void* pvParameters)
                }
            }
            else
-               sw1_state = BS_IDLE
+               sw1_state = BS_IDLE;
            break;
        case BS_LP:
            if (!button_pressed)
@@ -66,7 +88,11 @@ void sw1_task(void* pvParameters)
        }
 
        if (be) //If at button event is set, sends that to the button event queue
-           xQueueSendToBack(SW1_E_Q,&be,portMAX_DELAY);
+       {
+           //xQueueSendToBack(SW1_E_Q,&be,portMAX_DELAY);
+           send_test_state ^= 1;
+           xQueueSendToBack(LCD_Q,send_test_state? &test_put:&test_clear,portMAX_DELAY);
+       }
     }
 }
 

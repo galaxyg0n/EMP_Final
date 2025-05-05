@@ -13,6 +13,8 @@
 #include "semphr.h"
 #include "lcd.h"
 #include "glob_def.h"
+#include "button.h"
+#include "tm4c123gh6pm.h"
 
 //Defines
 #define USERTASK_STACK_SIZE configMINIMAL_STACK_SIZE
@@ -30,11 +32,14 @@ TimerHandle_t sw1_timer;
 
 void init_hardware()
 {
+    init_button();
     init_systick();
 }
 
 int main(void)
 {
+    init_hardware();
+
     sw1_timer = xTimerCreate("Button_timeout",500/portTICK_RATE_MS,pdFALSE,NULL,button_timer_callback);    //Button specific
     SW1_E_Q = xQueueCreate(8, sizeof(uint8_t));
 
@@ -42,6 +47,8 @@ int main(void)
 
     xTaskCreate(LCD_task,"LCD",USERTASK_STACK_SIZE,NULL,MED_PRIO,NULL);
     xTaskCreate(sw1_task,"BUTTON",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+
+    vTaskStartScheduler();
 
 	return 0;
 }

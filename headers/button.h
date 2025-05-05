@@ -15,12 +15,15 @@
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
-#include "gpio.h"
 #include "glob_def.h"
 
+//Switch
+#define PORTF_LOCK 0x4C4F434B
+#define SW1 0x10
 
 void button_timer_callback(TimerHandle_t xTimer);
 void sw1_task(void* pvParameters);
+void init_button();
 
 
 

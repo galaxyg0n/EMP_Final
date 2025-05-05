@@ -5,6 +5,7 @@
  *      Author: karlj
  */
 
+#include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -22,7 +23,6 @@ void master_control_task(void* pvParameters)
         switch(cont_state)
         {
         case E_STILL:
-
             break;
         case E_RUN:
             break;
@@ -31,7 +31,6 @@ void master_control_task(void* pvParameters)
         default:
             break;
         }
-        vTaskDelay(100\portTICK_RATE_MS);
     }
 }
 
