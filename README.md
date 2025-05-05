@@ -42,5 +42,36 @@
   
 ---
 
-## TODO
+## Module implementation
+- LCD :white_check_mark:
+  - Setup :white_check_mark:
+  - Task structure :white_check_mark:
+<br>
+
+- Matrix keypad :white_check_mark:
+  - Setup :white_check_mark:
+  - Task structure :white_check_mark:
+  - Display on LCD :white_check_mark:
+  - Bounce prevention :white_check_mark:
+<br>
+
+- UART (Ready for implementation)
+  - Setup :white_check_mark:
+  - Task structure :white_check_mark:
+  - Logging 
+<br>  
+
+- Rotary encoder (Working on: Simon)
+  - Setup
+  - Task structure
+<br>
+
+- Elevator control (Working on: Karl)
+  - Setup
+  - Task structure
+<br>  
+
+- Potentiometer 
+  - Setup
+  - Task struture
 
