@@ -20,27 +20,20 @@
 #include "glob_def.h"
 
 #include "uart.h"
+#include "lcd.h"
 
 #include "tm4c123gh6pm.h"
 
 
-#define COL_1 0x04
-#define COL_2 0x08
-#define COL_3 0x10
+#define COL_1 0x10 // PA4
+#define COL_2 0x08 // PA3
+#define COL_3 0x04 // PA2
 
-#define ROW_1 0x00
-#define ROW_2 0x02
-#define ROW_3 0x04
-#define ROW_4 0x08
+#define ROW_1 0x03 // PE0
+#define ROW_2 0x02 // PE1
+#define ROW_3 0x01 // PE2
+#define ROW_4 0x00 // PE3
 
-#define KEYB_D // PA2
-#define KEYB_E // PA3
-#define KEYB_F // PA4
-
-#define KEYB_G // PE0
-#define KEYB_H // PE1
-#define KEYB_J // PE2
-#define KEYB_K // PE3
 
 
 #define KEYPAD_QUEUE_LEN 20

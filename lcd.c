@@ -133,7 +133,7 @@ void init_lcd()
 {
     //General pin init.
     int dummy;
-    SYSCTL_RCGC2_R = SYSCTL_RCGC2_GPIOC + SYSCTL_RCGC2_GPIOD + SYSCTL_RCGC2_GPIOF; //Enable clock on pins
+    SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOC + SYSCTL_RCGC2_GPIOD + SYSCTL_RCGC2_GPIOF; //Enable clock on pins
     dummy = SYSCTL_RCGC2_R;
 
     //Sets data direction

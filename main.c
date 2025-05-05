@@ -43,8 +43,8 @@ SemaphoreHandle_t E_MOVE_MUTEX;
 void init_hardware()
 {
     init_button();
-    //init_matrix();
-    //uart_init(9600, 8, NO_PARITY, 1);
+    init_matrix();
+    uart_init(9600, 8, NO_PARITY, 1);
 
     init_systick();
 }
