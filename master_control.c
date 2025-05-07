@@ -14,7 +14,9 @@ extern SemaphoreHandle_t E_MOVE_MUTEX;
 
 uint8_t input_key()
 {
-    return 0; //Test right now
+    keypadStruct returnStruct;
+    while(!keypad_queue_get(&returnStruct));
+    return returnStruct.keyPressed;
 }
 
 void master_control_task(void* pvParameters)
@@ -71,8 +73,18 @@ void master_control_task(void* pvParameters)
                 snprintf(str,size,"%c",entered_val);
                 LCD_queue_put(7+num_length,2,str);
             }
-            if (!(entered_val%8))
-                cont_state = E_STILL;
+            LCD_queue_put(1,1,"clc");
+            if (!(password%8))
+            {
+                LCD_queue_put(1,1,"Correct!");
+                //Choose floor with rotary encoder
+                //Call state E_MOVING again
+            }
+            else
+            {
+                LCD_queue_put(1,1,"Wrong!");
+            }
+            vTaskDelay(500/portTICK_RATE_MS);
             break;
         default:
             break;

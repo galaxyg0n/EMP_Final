@@ -14,10 +14,12 @@
 #include "queue.h"
 #include "timers.h"
 #include "semphr.h"
+#include "event_groups.h"
 #include "lcd.h"
 #include "glob_def.h"
 #include "button.h"
 #include "master_control.h"
+#include "leds.h"
 #include "tm4c123gh6pm.h"
 
 void elevator_task(void* pvParameters);

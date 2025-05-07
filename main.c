@@ -19,6 +19,8 @@
 #include "matrix.h"
 #include "uart.h"
 #include "elevator.h"
+#include "leds.h"
+#include "event_groups.h"
 
 #include "master_control.h"
 #include "tm4c123gh6pm.h"
@@ -40,10 +42,13 @@ QueueHandle_t MATRIX_Q;
 TimerHandle_t sw1_timer;
 SemaphoreHandle_t E_MOVE_MUTEX;
 
+EventGroupHandle_t STATUS_LED_EVENT;
+
 void init_hardware()
 {
     init_button();
     init_matrix();
+    init_leds();
     uart_init(9600, 8, NO_PARITY, 1);
 
     init_systick();
@@ -61,6 +66,7 @@ int main(void)
 
     E_MOVE_MUTEX = xSemaphoreCreateMutex();
 
+    STATUS_LED_EVENT = xEventGroupCreate();
 
     xTaskCreate(LCD_task, "LCD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
     xTaskCreate(sw1_task, "BUTTON", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
@@ -71,6 +77,9 @@ int main(void)
 
     xTaskCreate(master_control_task,"MASTER_CONTROL",USERTASK_STACK_SIZE,NULL,HIGH_PRIO+1,NULL);
     xTaskCreate(elevator_task,"ELEVATOR",USERTASK_STACK_SIZE,NULL,HIGH_PRIO,NULL);
+    xTaskCreate(blink_red_led_task,"R_LED",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+    xTaskCreate(blink_yellow_led_task,"Y_LED",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+    xTaskCreate(green_led_task,"G_LED",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
 
     vTaskStartScheduler();
 	return 0;

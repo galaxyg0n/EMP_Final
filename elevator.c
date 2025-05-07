@@ -8,7 +8,10 @@
 #include "elevator.h"
 #include "small_sprints.h"
 
+#define FORBIDDEN_FLOOR 13
+
 extern SemaphoreHandle_t E_MOVE_MUTEX;
+extern EventGroupHandle_t STATUS_LED_EVENT;
 
 uint8_t user_floor = 5;
 uint8_t dest_floor = 0;
@@ -24,6 +27,7 @@ void elevator_task(void* pvParameters)
     static uint8_t current_floor = 2;
     static int8_t direction = 1;
     static uint8_t str[16];
+    static float perc_trip;
     const size_t size = sizeof(str);
 
     while(1)
@@ -45,17 +49,34 @@ void elevator_task(void* pvParameters)
             state = 2;
             break;
         case 2:
-            snprintf(str,size,"%d ",current_floor);
-            LCD_queue_put(8,1,str);
-            if (current_floor!=*destination)
-                current_floor += direction;
-            else
+        {
+            float extra_floor = (float)((*destination>FORBIDDEN_FLOOR&&current_floor<FORBIDDEN_FLOOR)||(*destination<FORBIDDEN_FLOOR&&current_floor>FORBIDDEN_FLOOR));
+            float floor_pct_inc = 100/((float)(*destination)-(float)current_floor-extra_floor);
+            float floor_pct = 0;
+
+            while(current_floor!=*destination)
             {
-                state = 0;
-                xSemaphoreGive(E_MOVE_MUTEX);
+                vTaskDelay(1000/portTICK_RATE_MS);
+                current_floor+=direction;
+                if (current_floor == FORBIDDEN_FLOOR)
+                    current_floor += direction;
+                snprintf(str,size,"%d ",current_floor);
+                LCD_queue_put(8,1,str);
+
+
+                floor_pct+=floor_pct_inc;
+                xEventGroupClearBits(STATUS_LED_EVENT,LED_R|LED_Y|LED_G);
+                if (floor_pct<50)
+                    xEventGroupSetBits(STATUS_LED_EVENT,LED_Y);
+                else if (floor_pct<100)
+                    xEventGroupSetBits(STATUS_LED_EVENT,LED_R);
             }
-            vTaskDelay(1000/portTICK_RATE_MS);
+            xEventGroupSetBits(STATUS_LED_EVENT,LED_G);
+            state = 0;
+            xSemaphoreGive(E_MOVE_MUTEX);
+
             break;
+        }
         }
     }
 }

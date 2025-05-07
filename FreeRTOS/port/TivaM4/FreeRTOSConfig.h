@@ -107,6 +107,8 @@
 #define configTIMER_QUEUE_LENGTH        10
 #define configTIMER_TASK_STACK_DEPTH    256
 
+#define configUSE_EVENT_GROUPS 1
+
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 		0
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )
