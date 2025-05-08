@@ -13,17 +13,19 @@
 extern SemaphoreHandle_t E_MOVE_MUTEX;
 extern EventGroupHandle_t STATUS_LED_EVENT;
 
-uint8_t user_floor = 5;
-uint8_t dest_floor = 0;
+volatile uint8_t dest_floor = 0;
 
-uint8_t is_user_in_elevator()
+uint8_t is_user_in_elevator(uint8_t choice)
 {
-    return 0;
+    static uint8_t user_in_elevator = 0;
+    user_in_elevator ^= choice;
+    return user_in_elevator;
 }
 
 void elevator_task(void* pvParameters)
 {
     static uint8_t state = 0;
+    static uint8_t user_floor = 0;
     static uint8_t current_floor = 2;
     static int8_t direction = 1;
     static uint8_t str[16];
@@ -32,7 +34,7 @@ void elevator_task(void* pvParameters)
 
     while(1)
     {
-        uint8_t* destination = (is_user_in_elevator()) ? &dest_floor : &user_floor;
+        uint8_t* destination = (is_user_in_elevator(0)) ? &dest_floor : &user_floor;
         switch(state)
         {
         case 0:
@@ -71,9 +73,11 @@ void elevator_task(void* pvParameters)
                 else if (floor_pct<100)
                     xEventGroupSetBits(STATUS_LED_EVENT,LED_R);
             }
+            user_floor = current_floor;
             xEventGroupSetBits(STATUS_LED_EVENT,LED_G);
             state = 0;
             xSemaphoreGive(E_MOVE_MUTEX);
+            vTaskDelay(100/portTICK_RATE_MS);
 
             break;
         }

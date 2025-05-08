@@ -16,6 +16,7 @@
 #include "semphr.h"
 #include "lcd.h"
 #include "glob_def.h"
+#include "elevator.h"
 
 void master_control_task(void* pvParameters);
 

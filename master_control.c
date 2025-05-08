@@ -11,6 +11,8 @@
 
 extern QueueHandle_t SW1_E_Q;
 extern SemaphoreHandle_t E_MOVE_MUTEX;
+extern uint8_t dest_floor;
+
 
 uint8_t input_key()
 {
@@ -50,10 +52,15 @@ void master_control_task(void* pvParameters)
         case E_ARRIVED:
             LCD_queue_put(1,2,"Arrived!       ");
             vTaskDelay(750/portTICK_RATE_MS);
-            if (!(trips%TRIPS_TO_BREAK))
-                cont_state = E_BROKEN;
-            else
-                cont_state = E_PASS;
+            //Check user in elevator state and flip it
+            if (is_user_in_elevator(1))
+            {
+                if (!(trips%TRIPS_TO_BREAK))
+                    cont_state = E_BROKEN;
+                else
+                    cont_state = E_PASS;
+            } else
+                cont_state = E_STILL;
             break;
         case E_BROKEN:
             break;
@@ -77,6 +84,8 @@ void master_control_task(void* pvParameters)
             if (!(password%8))
             {
                 LCD_queue_put(1,1,"Correct!");
+                dest_floor = 14;
+                cont_state = E_MOVING;
                 //Choose floor with rotary encoder
                 //Call state E_MOVING again
             }

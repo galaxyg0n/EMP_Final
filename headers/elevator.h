@@ -22,6 +22,7 @@
 #include "leds.h"
 #include "tm4c123gh6pm.h"
 
+uint8_t is_user_in_elevator(uint8_t choice);
 void elevator_task(void* pvParameters);
 
 #endif /* HEADERS_ELEVATOR_H_ */
