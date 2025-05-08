@@ -1,27 +1,27 @@
 # EMP Final project
 
 ## Requirements
-- 20 floors (excluding 13th)
-    - Main floor - floor 0
-    - Elevator start - floor 2
+- 20 floors (excluding 13th) ✅
+    - Main floor - floor 0 ✅
+    - Elevator start - floor 2 ✅
 
 <br>
 
-- Call elevator to main with long press (switch 1)
-    - LCD will display current floor level after activation
-    - Doors open at floor 0
+- Call elevator to main with long press (switch 1) ✅
+    - LCD will display current floor level after activation ✅
+    - Doors open at floor 0 ✅
 
 <br>
 
-- 4-digit code must be entered (divisible by 8)
+- 4-digit code must be entered (divisible by 8) ✅
     - On correct password, choose destinated floor with rotary encoder (press to confirm)
 
 <br>
 
-- LED functions
-    - Green LED - Steady ON: The elevator is stopped and the doors are open at a floor
-    - Yellow LED - Blinking: The elevator is moving and currently in the acceleration phase (The first 50% of the total moving time)
-    - Red LED - Blinking: The elevator is moving and currently in the deceleration phase (The last 50% of the total moving time)
+- LED functions ✅
+    - Green LED - Steady ON: The elevator is stopped and the doors are open at a floor ✅
+    - Yellow LED - Blinking: The elevator is moving and currently in the acceleration phase (The first 50% of the total moving time) ✅
+    - Red LED - Blinking: The elevator is moving and currently in the deceleration phase (The last 50% of the total moving time) ✅
 
 <br>
 
