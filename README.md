@@ -71,7 +71,7 @@
   - Task structure
 <br>  
 
-- Potentiometer 
+- Potentiometer (Working on: Daniel)
   - Setup
   - Task struture
 
