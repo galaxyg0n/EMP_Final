@@ -16,9 +16,6 @@ typedef struct {
   uint8_t str[32];
 } LCD_Put;
 
-typedef struct {
-    uint8_t keyPressed;
-} keypadStruct;
 
 enum BUTTON_STATES {BS_IDLE,BS_FP,BS_LP};
 enum BUTTON_EVENTS {BE_NO, BE_LONG};

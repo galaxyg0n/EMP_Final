@@ -21,7 +21,7 @@ void init_rotary()
 
     GPIO_PORTA_IS_R  &= ~(1 << DIGI_A);                     // Clear mask
 
-    GPIO_PORTA_IBE_R &= ~((1 << DIGI_A) | (1 << DIGI_P2)); // IEV control
+    GPIO_PORTA_IBE_R &= ~((1 << DIGI_A) | (1 << DIGI_P2));  // IEV control
     GPIO_PORTA_IEV_R |= ~((1 << DIGI_A) | (1 << DIGI_P2));  // Single falling edge detection
 
     GPIO_PORTA_ICR_R |= (1 << DIGI_A) | (1 << DIGI_P2);     // Clear interrupts
