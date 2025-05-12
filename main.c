@@ -5,6 +5,7 @@
  *
  */
 
+#include <LCD.h>
 #include "main.h"
 
 #include "FreeRTOS.h"
@@ -55,6 +56,7 @@ void init_hardware()
     uart_init(9600, 8, NO_PARITY, 1);
 
     init_systick();
+    matrix_init();
 }
 
 int main(void)

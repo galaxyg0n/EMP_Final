@@ -34,8 +34,6 @@
 #define ROW_3 0x01 // PE2
 #define ROW_4 0x00 // PE3
 
-
-
 #define KEYPAD_QUEUE_LEN 20
 #define KEYPAD_QUEUE_ITEM sizeof(keypadStruct)
 

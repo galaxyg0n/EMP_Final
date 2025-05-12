@@ -9,6 +9,7 @@
 
 extern QueueHandle_t MATRIX_Q;
 
+
 void init_matrix(void)
 {
     SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOA;
@@ -30,6 +31,10 @@ void sweep_keypad_task(void *pvParameters)
 {
     keypadStruct queue_msg;
     configASSERT(MATRIX_Q);
+    keypadStructure queue_msg;
+    keypad_queue = xQueueCreate(KEYPAD_QUEUE_LEN, KEYPAD_QUEUE_ITEM);
+
+    configASSERT(keypad_queue);
 
     uint8_t col[3] = {COL_1, COL_2, COL_3};
     uint8_t row[4] = {ROW_1, ROW_2, ROW_3, ROW_4};
@@ -79,6 +84,8 @@ void sweep_keypad_task(void *pvParameters)
 
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+
+    return 0;
 }
 
 
