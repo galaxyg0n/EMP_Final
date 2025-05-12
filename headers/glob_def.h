@@ -13,7 +13,7 @@
 typedef struct {
   uint8_t x;
   uint8_t y;
-  uint8_t str[16];
+  uint8_t str[32];
 } LCD_Put;
 
 

@@ -24,58 +24,58 @@ uint8_t is_user_in_elevator(uint8_t choice)
 
 void elevator_task(void* pvParameters)
 {
-    static uint8_t state = 0;
-    static uint8_t user_floor = 0;
-    static uint8_t current_floor = 2;
-    static int8_t direction = 1;
-    static uint8_t str[16];
-    static float perc_trip;
-    const size_t size = sizeof(str);
+    static enum ELE_STATES {NO_MOTION, INIT_MOTION, IN_MOTION} ele_state = NO_MOTION;
 
+    static int8_t user_floor = 0;
+    static int8_t current_floor = 2;
+
+    static uint8_t str[32];
+    const size_t size = sizeof(str);
     while(1)
     {
-        uint8_t* destination = (is_user_in_elevator(0)) ? &dest_floor : &user_floor;
-        switch(state)
+
+        switch(ele_state)
         {
-        case 0:
+        case NO_MOTION:
             xSemaphoreTake(E_MOVE_MUTEX,portMAX_DELAY);
-            direction = (current_floor>*destination) ? -1 : 1;
-            state = 1;
+            uint8_t* destination = (is_user_in_elevator(0)) ? &dest_floor : &user_floor;
+            int8_t direction = (current_floor>*destination) ? -1 : 1;
+            ele_state = 1;
             break;
-        case 1:
+        case INIT_MOTION:
             LCD_queue_put(1,1,"clc");
-            snprintf(str,size,"Floor: %d",current_floor);
+            snprintf(str,size,"Floor: %d\n%s",current_floor,(direction+1)?"Going up!" : "Going down!");
             LCD_queue_put(1,1,str);
-            snprintf(str,size,"%s",(direction+1)?"Going up!" : "Going down!");
-            LCD_queue_put(1,2,str);
-            state = 2;
+            ele_state = IN_MOTION;
             break;
-        case 2:
+        case IN_MOTION:
         {
-            float extra_floor = (float)((*destination>FORBIDDEN_FLOOR&&current_floor<FORBIDDEN_FLOOR)||(*destination<FORBIDDEN_FLOOR&&current_floor>FORBIDDEN_FLOOR));
-            float floor_pct_inc = 100/((float)(*destination)-(float)current_floor-extra_floor);
-            float floor_pct = 0;
+            uint8_t extra_floor = ((*destination>FORBIDDEN_FLOOR&&current_floor<FORBIDDEN_FLOOR)||(*destination<FORBIDDEN_FLOOR&&current_floor>FORBIDDEN_FLOOR));
+            uint8_t floor_50_pct = (*destination+current_floor-extra_floor)/2;
+
+            xEventGroupClearBits(STATUS_LED_EVENT,CONST_G|LED_R);
+            xEventGroupSetBits(STATUS_LED_EVENT,LED_Y);
 
             while(current_floor!=*destination)
             {
                 vTaskDelay(1000/portTICK_RATE_MS);
-                current_floor+=direction;
+                if ((current_floor+=direction) == floor_50_pct)
+                {
+                    xEventGroupClearBits(STATUS_LED_EVENT,LED_Y);
+                    xEventGroupSetBits(STATUS_LED_EVENT,LED_R);
+                }
                 if (current_floor == FORBIDDEN_FLOOR)
                     current_floor += direction;
+
                 snprintf(str,size,"%d ",current_floor);
                 LCD_queue_put(8,1,str);
-
-
-                floor_pct+=floor_pct_inc;
-                xEventGroupClearBits(STATUS_LED_EVENT,LED_R|LED_Y|LED_G);
-                if (floor_pct<50)
-                    xEventGroupSetBits(STATUS_LED_EVENT,LED_Y);
-                else if (floor_pct<100)
-                    xEventGroupSetBits(STATUS_LED_EVENT,LED_R);
             }
+
             user_floor = current_floor;
-            xEventGroupSetBits(STATUS_LED_EVENT,LED_G);
-            state = 0;
+            xEventGroupClearBits(STATUS_LED_EVENT,LED_R|LED_Y);
+            xEventGroupSetBits(STATUS_LED_EVENT,CONST_G);
+            ele_state = NO_MOTION;
+
             xSemaphoreGive(E_MOVE_MUTEX);
             vTaskDelay(100/portTICK_RATE_MS);
 
