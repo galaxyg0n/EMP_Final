@@ -44,6 +44,9 @@ extern void vPortSVCHandler(void);
 extern void xPortPendSVHandler(void);
 extern void xPortSysTickHandler(void);
 
+// User defined
+extern void rotary_ISR_handler(void);
+
 //*****************************************************************************
 //
 // Linker variable that marks the top of the stack.
@@ -85,7 +88,7 @@ void (* const g_pfnVectors[])(void) =
     0,                                      // Reserved
     xPortPendSVHandler,                      // The PendSV handler
     xPortSysTickHandler,                      // The SysTick handler
-    IntDefaultHandler,                      // GPIO Port A
+    rotary_ISR_handler,                     // GPIO Port A
     IntDefaultHandler,                      // GPIO Port B
     IntDefaultHandler,                      // GPIO Port C
     IntDefaultHandler,                      // GPIO Port D
