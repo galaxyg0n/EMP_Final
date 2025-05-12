@@ -26,11 +26,11 @@ uint8_t input_key()
 void master_control_task(void* pvParameters)
 {
 
-    static uint8_t str[16];
+    static uint8_t str[32];
     const size_t size = sizeof(str);
 
     static enum CONT_STATES {E_STILL,E_ARRIVED,E_PASS,E_MOVING,E_BROKEN} cont_state = E_STILL;
-    static uint8_t trips = 1;
+    static uint8_t trips;
     xSemaphoreTake(E_MOVE_MUTEX,portMAX_DELAY);
     while(1)
     {
@@ -40,10 +40,7 @@ void master_control_task(void* pvParameters)
         case E_STILL:
             xQueueReceive(SW1_E_Q,&be,portMAX_DELAY);
             if (be == BE_LONG)
-            {
-                trips++;
                 cont_state = E_MOVING;
-            }
             break;
 
         case E_MOVING:
@@ -59,7 +56,7 @@ void master_control_task(void* pvParameters)
             //Check user in elevator state and flip it
             if (is_user_in_elevator(1))
             {
-                if (!(trips%TRIPS_TO_BREAK))
+                if (!(++trips%TRIPS_TO_BREAK))
                     cont_state = E_BROKEN;
                 else
                     cont_state = E_PASS;
@@ -68,9 +65,11 @@ void master_control_task(void* pvParameters)
             break;
 
         case E_BROKEN:
+            LCD_queue_put(1,1,"clc");
+            LCD_queue_put(1,1,"Broken");
             xEventGroupClearBits(STATUS_LED_EVENT, CONST_G);
             xEventGroupSetBits(STATUS_LED_EVENT,LED_G|LED_R|LED_Y);
-            while(1);
+            vTaskDelay(2000/portTICK_RATE_MS);
             break;
 
         case E_PASS:
@@ -93,7 +92,7 @@ void master_control_task(void* pvParameters)
             if (!(password%8))
             {
                 LCD_queue_put(1,1,"Correct!");
-                dest_floor = 14;
+                dest_floor = 5;
                 cont_state = E_MOVING;
                 //Choose floor with rotary encoder
                 //Call state E_MOVING again
