@@ -77,7 +77,7 @@ void master_control_task(void* pvParameters)
             LCD_queue_put(1,1,"Password req.\nEnter: ");
 
             uint8_t num_pos = 7;
-            uint8_t password = 0;
+            uint16_t password = 0;
 
             uint16_t pass_pos;
             for (pass_pos = 1000; pass_pos; pass_pos/=10)
