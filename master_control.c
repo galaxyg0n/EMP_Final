@@ -11,6 +11,8 @@
 
 extern QueueHandle_t SW1_E_Q;
 extern SemaphoreHandle_t E_MOVE_MUTEX;
+extern EventGroupHandle_t STATUS_LED_EVENT;
+
 extern uint8_t dest_floor;
 
 
@@ -24,11 +26,11 @@ uint8_t input_key()
 void master_control_task(void* pvParameters)
 {
 
-    static uint8_t str[16];
+    static uint8_t str[32];
     const size_t size = sizeof(str);
 
     static enum CONT_STATES {E_STILL,E_ARRIVED,E_PASS,E_MOVING,E_BROKEN} cont_state = E_STILL;
-    static uint8_t trips = 1;
+    static uint8_t trips;
     xSemaphoreTake(E_MOVE_MUTEX,portMAX_DELAY);
     while(1)
     {
@@ -38,63 +40,69 @@ void master_control_task(void* pvParameters)
         case E_STILL:
             xQueueReceive(SW1_E_Q,&be,portMAX_DELAY);
             if (be == BE_LONG)
-            {
-                trips++;
                 cont_state = E_MOVING;
-            }
             break;
+
         case E_MOVING:
             xSemaphoreGive(E_MOVE_MUTEX);
             vTaskDelay(100/portTICK_RATE_MS);
             xSemaphoreTake(E_MOVE_MUTEX,portMAX_DELAY);
             cont_state = E_ARRIVED;
             break;
+
         case E_ARRIVED:
             LCD_queue_put(1,2,"Arrived!       ");
             vTaskDelay(750/portTICK_RATE_MS);
             //Check user in elevator state and flip it
             if (is_user_in_elevator(1))
             {
-                if (!(trips%TRIPS_TO_BREAK))
+                if (!(++trips%TRIPS_TO_BREAK))
                     cont_state = E_BROKEN;
                 else
                     cont_state = E_PASS;
             } else
                 cont_state = E_STILL;
             break;
+
         case E_BROKEN:
+            LCD_queue_put(1,1,"clc");
+            LCD_queue_put(1,1,"Broken");
+            xEventGroupClearBits(STATUS_LED_EVENT, CONST_G);
+            xEventGroupSetBits(STATUS_LED_EVENT,LED_G|LED_R|LED_Y);
+            vTaskDelay(2000/portTICK_RATE_MS);
             break;
+
         case E_PASS:
             LCD_queue_put(1,1,"clc");
-            LCD_queue_put(1,1,"Password req.:");
-            LCD_queue_put(1,2,"Enter: ");
+            LCD_queue_put(1,1,"Password req.\nEnter: ");
+
+            uint8_t num_pos = 7;
             uint16_t password = 0;
-            uint16_t pass_pos = 1000;
-            uint8_t num_length = 0;
-            uint8_t entered_val = 0;
-            for (num_length = 0; num_length<4; num_length++)
+
+            uint16_t pass_pos;
+            for (pass_pos = 1000; pass_pos; pass_pos/=10)
             {
-                entered_val = input_key();
-                pass_pos /= 10;
-                password = (entered_val-'0')*pass_pos;
+                uint8_t entered_val = input_key();
                 snprintf(str,size,"%c",entered_val);
-                LCD_queue_put(7+num_length,2,str);
+                password += (entered_val-'0')*pass_pos;
+                LCD_queue_put(num_pos++,2,str);
             }
+
             LCD_queue_put(1,1,"clc");
             if (!(password%8))
             {
                 LCD_queue_put(1,1,"Correct!");
-                dest_floor = 14;
+                dest_floor = 5;
                 cont_state = E_MOVING;
                 //Choose floor with rotary encoder
                 //Call state E_MOVING again
             }
             else
-            {
                 LCD_queue_put(1,1,"Wrong!");
-            }
+
             vTaskDelay(500/portTICK_RATE_MS);
             break;
+
         default:
             break;
         }

@@ -83,9 +83,7 @@ int main(void)
 
     xTaskCreate(master_control_task,"MASTER_CONTROL",USERTASK_STACK_SIZE,NULL,HIGH_PRIO+1,NULL);
     xTaskCreate(elevator_task,"ELEVATOR",USERTASK_STACK_SIZE,NULL,HIGH_PRIO,NULL);
-    xTaskCreate(blink_red_led_task,"R_LED",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
-    xTaskCreate(blink_yellow_led_task,"Y_LED",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
-    //xTaskCreate(green_led_task,"G_LED",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+    xTaskCreate(led_task,"LED",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
 
     vTaskStartScheduler();
 	return 0;

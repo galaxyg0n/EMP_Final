@@ -124,7 +124,10 @@ void lcd_print_str(uint8_t* str)
 {
     do //Loops through char array and prints each
     {
-        lcd_print_char(*str); //Prints char
+        if(*str == '\n')
+            lcd_setCursor(2,1);
+        else
+            lcd_print_char(*str); //Prints char
     }while(*(++str));
 }
 
@@ -181,7 +184,7 @@ void LCD_task(void* pvParameters)
 }
 
 
-bool LCD_queue_put(uint8_t x, uint8_t y, uint8_t str[16])
+bool LCD_queue_put(uint8_t x, uint8_t y, uint8_t str[32])
 {
     LCD_Put queueStruct;
     queueStruct.x = x;
