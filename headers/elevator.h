@@ -22,6 +22,9 @@
 #include "leds.h"
 #include "tm4c123gh6pm.h"
 
+#define FLIP 1
+#define NO_FLIP 0
+
 uint8_t is_user_in_elevator(uint8_t choice);
 void elevator_task(void* pvParameters);
 

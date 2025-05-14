@@ -8,6 +8,8 @@
 #include "rot_encoder.h"
 
 extern QueueHandle_t ROTARY_Q;
+extern SemaphoreHandle_t ROT_ENC_OK, ROT_ENC_READY;
+extern uint8_t rot_enc_val;
 
 void init_rotary()
 {
@@ -21,11 +23,10 @@ void init_rotary()
 
     GPIO_PORTA_IS_R  &= ~(1 << DIGI_A);                     // Clear mask
 
-    GPIO_PORTA_IBE_R &= ~((1 << DIGI_A) | (1 << DIGI_P2));  // IEV control
+
     GPIO_PORTA_IEV_R |= ~((1 << DIGI_A) | (1 << DIGI_P2));  // Single falling edge detection
 
     GPIO_PORTA_ICR_R |= (1 << DIGI_A) | (1 << DIGI_P2);     // Clear interrupts
-    GPIO_PORTA_IM_R  |= (1 << DIGI_A) | (1 << DIGI_P2);     // Unmasking
 
     NVIC_EN0_R       |= (1 << 0);
     NVIC_ST_CTRL_R   |= 0x2;
@@ -51,14 +52,22 @@ void rotary_ISR_handler(void)
 void rotary_task(void* pvParameters)
 {
     configASSERT(ROTARY_Q);
-    char c;
+    uint8_t c;
+    uint8_t str[32];
+    const size_t size = sizeof(str);
 
     while(1)
     {
-        if(xQueueReceive(ROTARY_Q, &c, portMAX_DELAY) == pdPASS)
+        xSemaphoreTake(ROT_ENC_READY,portMAX_DELAY);
+        GPIO_PORTA_IM_R  |= (1 << DIGI_A) | (1 << DIGI_P2);     // Unmasking
+        while(c!='2')
         {
-            uart_queue_put(c);
+            xQueueReceive(ROTARY_Q, &c, portMAX_DELAY);
+            snprintf(str,size,"%d",++rot_enc_val);
+            LCD_queue_put(1,2,str);
         }
+        GPIO_PORTA_IM_R  &= ~((1 << DIGI_A) | (1 << DIGI_P2));     // Masking
+        xSemaphoreGive(ROT_ENC_OK);
     }
 }
 

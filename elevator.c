@@ -38,7 +38,7 @@ void elevator_task(void* pvParameters)
         {
         case NO_MOTION:
             xSemaphoreTake(E_MOVE_MUTEX,portMAX_DELAY);
-            uint8_t* destination = (is_user_in_elevator(0)) ? &dest_floor : &user_floor;
+            uint8_t* destination = (is_user_in_elevator(NO_FLIP)) ? &dest_floor : &user_floor;
             int8_t direction = (current_floor>*destination) ? -1 : 1;
             ele_state = 1;
             break;

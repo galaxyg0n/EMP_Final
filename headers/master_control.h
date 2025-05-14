@@ -20,6 +20,8 @@
 #include "glob_def.h"
 #include "elevator.h"
 
+#define TRIPS_TO_BREAK 4
+
 void master_control_task(void* pvParameters);
 
 

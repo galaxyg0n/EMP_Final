@@ -17,6 +17,8 @@
 #include "timers.h"
 #include "semphr.h"
 
+#include "small_sprints.h"
+#include "lcd.h"
 #include "tm4c123gh6pm.h"
 #include "uart.h"
 

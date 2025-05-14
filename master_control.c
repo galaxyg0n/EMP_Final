@@ -7,13 +7,15 @@
 
 #include "master_control.h"
 
-#define TRIPS_TO_BREAK 4
+
+
 
 extern QueueHandle_t SW1_E_Q;
-extern SemaphoreHandle_t E_MOVE_MUTEX;
+extern SemaphoreHandle_t E_MOVE_MUTEX,ROT_ENC_OK, ROT_ENC_READY;
 extern EventGroupHandle_t STATUS_LED_EVENT;
 
 extern uint8_t dest_floor;
+volatile uint8_t rot_enc_val;
 
 
 uint8_t input_key()
@@ -22,7 +24,6 @@ uint8_t input_key()
     while(!keypad_queue_get(&returnStruct));
     return returnStruct.keyPressed;
 }
-
 void master_control_task(void* pvParameters)
 {
 
@@ -54,7 +55,7 @@ void master_control_task(void* pvParameters)
             LCD_queue_put(1,2,"Arrived!       ");
             vTaskDelay(750/portTICK_RATE_MS);
             //Check user in elevator state and flip it
-            if (is_user_in_elevator(1))
+            if (is_user_in_elevator(FLIP))
             {
                 if (!(++trips%TRIPS_TO_BREAK))
                     cont_state = E_BROKEN;
@@ -96,7 +97,10 @@ void master_control_task(void* pvParameters)
                 LCD_queue_put(1,1,"clc");
                 LCD_queue_put(1,1,"Destination:");
 
-                dest_floor = 5;
+                rot_enc_val = 0;
+                xSemaphoreGive(ROT_ENC_READY);
+                xSemaphoreTake(ROT_ENC_OK,portMAX_DELAY);
+                dest_floor = rot_enc_val;
                 cont_state = E_MOVING;
             }
             else

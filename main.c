@@ -43,7 +43,7 @@ QueueHandle_t MATRIX_Q;
 QueueHandle_t ROTARY_Q;
 
 TimerHandle_t sw1_timer;
-SemaphoreHandle_t E_MOVE_MUTEX;
+SemaphoreHandle_t E_MOVE_MUTEX, ROT_ENC_OK, ROT_ENC_READY;
 
 EventGroupHandle_t STATUS_LED_EVENT;
 
@@ -70,17 +70,19 @@ int main(void)
     ROTARY_Q = xQueueCreate(ROTARY_QUEUE_LEN, ROTARY_QUEUE_ITEM);
 
     E_MOVE_MUTEX = xSemaphoreCreateMutex();
+    ROT_ENC_READY = xSemaphoreCreateBinary();
+    ROT_ENC_OK = xSemaphoreCreateBinary();
 
     STATUS_LED_EVENT = xEventGroupCreate();
 
     xTaskCreate(LCD_task, "LCD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
     xTaskCreate(sw1_task, "BUTTON", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
 
-    xTaskCreate(sweep_keypad_task, "SWEEP_KEYPAD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
-    xTaskCreate(keypad_consumer_task, "KEYPAD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
-    xTaskCreate(rotary_task, "ROTARY", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
+    xTaskCreate(sweep_keypad_task, "SWEEP_KEYPAD", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
+    xTaskCreate(keypad_consumer_task, "KEYPAD", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
+    xTaskCreate(rotary_task, "ROTARY", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
 
-    xTaskCreate(uart_tx_task, "UART_TX", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL );
+    xTaskCreate(uart_tx_task, "UART_TX", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL );
 
     xTaskCreate(master_control_task,"MASTER_CONTROL",USERTASK_STACK_SIZE,NULL,HIGH_PRIO+1,NULL);
     xTaskCreate(elevator_task,"ELEVATOR",USERTASK_STACK_SIZE,NULL,HIGH_PRIO,NULL);
