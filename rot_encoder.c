@@ -46,6 +46,7 @@ void rotary_ISR_handler(void)
         GPIO_PORTA_ICR_R |= (1 << DIGI_P2);
         rotary_queue_put('2');
     }
+    GPIO_PORTA_IM_R  &= ~((1 << DIGI_A) | (1 << DIGI_P2));     // Masking
 }
 
 
@@ -59,14 +60,17 @@ void rotary_task(void* pvParameters)
     while(1)
     {
         xSemaphoreTake(ROT_ENC_READY,portMAX_DELAY);
-        GPIO_PORTA_IM_R  |= (1 << DIGI_A) | (1 << DIGI_P2);     // Unmasking
+
         while(c!='2')
         {
+            GPIO_PORTA_IM_R  |= (1 << DIGI_A) | (1 << DIGI_P2);     // Unmasking
             xQueueReceive(ROTARY_Q, &c, portMAX_DELAY);
+            uart_queue_put(c);
             snprintf(str,size,"%d",++rot_enc_val);
             LCD_queue_put(1,2,str);
+            vTaskDelay(200/portTICK_RATE_MS);
         }
-        GPIO_PORTA_IM_R  &= ~((1 << DIGI_A) | (1 << DIGI_P2));     // Masking
+
         xSemaphoreGive(ROT_ENC_OK);
     }
 }
