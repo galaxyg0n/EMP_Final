@@ -92,10 +92,12 @@ void master_control_task(void* pvParameters)
             if (!(password%8))
             {
                 LCD_queue_put(1,1,"Correct!");
+                vTaskDelay(500/portTICK_RATE_MS);
+                LCD_queue_put(1,1,"clc");
+                LCD_queue_put(1,1,"Destination:");
+
                 dest_floor = 5;
                 cont_state = E_MOVING;
-                //Choose floor with rotary encoder
-                //Call state E_MOVING again
             }
             else
                 LCD_queue_put(1,1,"Wrong!");
