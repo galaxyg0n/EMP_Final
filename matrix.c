@@ -81,7 +81,6 @@ void sweep_keypad_task(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
-    return 0;
 }
 
 

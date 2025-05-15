@@ -27,9 +27,13 @@
 #define DIGI_P2 7
 
 #define ROTARY_QUEUE_LEN 20
-#define ROTARY_QUEUE_ITEM sizeof(uint8_t)
+#define ROTARY_QUEUE_ITEM sizeof(ROT_EVENT)
 
-
+typedef enum {
+    SCROLL_UP,
+    SCROLL_DOWN,
+    BUTTON
+} ROT_EVENT;
 
 void init_rotary();
 void rotary_task();

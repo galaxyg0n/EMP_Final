@@ -23,6 +23,7 @@
 #include "leds.h"
 #include "event_groups.h"
 #include "rot_encoder.h"
+#include "potentiometer.h"
 
 #include "master_control.h"
 #include "tm4c123gh6pm.h"
@@ -41,6 +42,7 @@
 QueueHandle_t LCD_Q, SW1_E_Q;
 QueueHandle_t MATRIX_Q;
 QueueHandle_t ROTARY_Q;
+QueueHandle_t POT_Q;
 
 TimerHandle_t sw1_timer;
 SemaphoreHandle_t E_MOVE_MUTEX, ROT_ENC_OK, ROT_ENC_READY;
@@ -54,6 +56,7 @@ void init_hardware()
     init_leds();
     init_rotary();
     uart_init(9600, 8, NO_PARITY, 1);
+    init_adc();
 
     init_systick();
 }
@@ -68,25 +71,28 @@ int main(void)
     LCD_Q    = xQueueCreate(16, sizeof(LCD_Put));
     MATRIX_Q = xQueueCreate(10, sizeof(keypadStruct));
     ROTARY_Q = xQueueCreate(ROTARY_QUEUE_LEN, ROTARY_QUEUE_ITEM);
+    POT_Q    = xQueueCreate(10, sizeof(uint16_t));
 
-    E_MOVE_MUTEX = xSemaphoreCreateMutex();
+    E_MOVE_MUTEX  = xSemaphoreCreateMutex();
     ROT_ENC_READY = xSemaphoreCreateBinary();
-    ROT_ENC_OK = xSemaphoreCreateBinary();
+    ROT_ENC_OK    = xSemaphoreCreateBinary();
 
     STATUS_LED_EVENT = xEventGroupCreate();
 
-    xTaskCreate(LCD_task, "LCD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
-    xTaskCreate(sw1_task, "BUTTON", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
+    //xTaskCreate(LCD_task, "LCD", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
+    //xTaskCreate(sw1_task, "BUTTON", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
 
-    xTaskCreate(sweep_keypad_task, "SWEEP_KEYPAD", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
-    xTaskCreate(keypad_consumer_task, "KEYPAD", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
-    xTaskCreate(rotary_task, "ROTARY", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
+    //xTaskCreate(sweep_keypad_task, "SWEEP_KEYPAD", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
+    //xTaskCreate(keypad_consumer_task, "KEYPAD", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
+    //xTaskCreate(rotary_task, "ROTARY", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
 
-    xTaskCreate(uart_tx_task, "UART_TX", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL );
+    xTaskCreate(potentiometer_task, "POTENTIOMETER", USERTASK_STACK_SIZE, NULL, MED_PRIO, NULL);
 
-    xTaskCreate(master_control_task,"MASTER_CONTROL",USERTASK_STACK_SIZE,NULL,HIGH_PRIO+1,NULL);
-    xTaskCreate(elevator_task,"ELEVATOR",USERTASK_STACK_SIZE,NULL,HIGH_PRIO,NULL);
-    xTaskCreate(led_task,"LED",USERTASK_STACK_SIZE,NULL,LOW_PRIO,NULL);
+    xTaskCreate(uart_tx_task, "UART_TX", USERTASK_STACK_SIZE, NULL, HIGH_PRIO, NULL );
+
+    //xTaskCreate(master_control_task, "MASTER_CONTROL", USERTASK_STACK_SIZE, NULL, HIGH_PRIO + 1, NULL);
+    //xTaskCreate(elevator_task, "ELEVATOR", USERTASK_STACK_SIZE, NULL, HIGH_PRIO, NULL);
+    //xTaskCreate(led_task, "LED", USERTASK_STACK_SIZE, NULL, LOW_PRIO, NULL);
 
     vTaskStartScheduler();
 	return 0;
