@@ -68,9 +68,9 @@ void potentiometer_task(void* pvParameters)
     {
         pot_val = get_adc();
 
-//        adcvalue_to_string(get_adc(), buffer, sizeof(buffer));
-//        send_string_uart(buffer);
+        //adcvalue_to_string(get_adc(), buffer, sizeof(buffer));
+        //send_string_uart(buffer);
 
-        vTaskDelay(50/portTICK_RATE_MS);
+        vTaskDelay(50 / portTICK_RATE_MS);
     }
 }

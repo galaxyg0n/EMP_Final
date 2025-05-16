@@ -85,13 +85,22 @@ void master_control_task(void* pvParameters)
                 random_val = rand() % (MAX_POT+1);
                 broken_state = BROKEN_MATCH;
                 break;
+
             case BROKEN_MATCH:
-                snprintf(str,size,"Match:%d\n      %d    ",random_val,pot_val);
-                LCD_queue_put(1,1,str);
+            {
+                static uint16_t last_dis_val = 0xFFFF;
+                if(abs((int)pot_val - (int)last_dis_val) > 3) // Reduces display updates on noise and small movements
+                {
+                    snprintf(str, size, "Match:%d\n      %d    ", random_val, pot_val);
+                    LCD_queue_put(1,1,str);
+                    last_dis_val = pot_val;
+                }
                 //pot_val = random_val;
                 if (random_val == pot_val)
                     broken_state = BROKEN_ENCODER;
                 break;
+            }
+
             case BROKEN_ENCODER:
                 LCD_queue_put(1,1,"clc");
                 LCD_queue_put(1,1,"Use encoder:\nDegrees: 0");
@@ -103,7 +112,7 @@ void master_control_task(void* pvParameters)
                 cont_state = E_PASS;
                 break;
             }
-            vTaskDelay(100/portTICK_RATE_MS);
+            vTaskDelay(100 / portTICK_RATE_MS);
             break;
         }
         case E_PASS:
@@ -125,11 +134,11 @@ void master_control_task(void* pvParameters)
             LCD_queue_put(1,1,"clc");
             if (!(password%8))
             {
-                LCD_queue_put(1,1,"Correct!");
-                vTaskDelay(500/portTICK_RATE_MS);
-                LCD_queue_put(1,1,"clc");
-                snprintf(str,size,"Destination:\n%d",dest_floor);
-                LCD_queue_put(1,1,str);
+                LCD_queue_put(1, 1, "Correct!");
+                vTaskDelay(500 / portTICK_RATE_MS);
+                LCD_queue_put(1, 1, "clc");
+                snprintf(str, size, "Destination:\n%d", dest_floor);
+                LCD_queue_put(1, 1, str);
 
                 rot_enc_val = dest_floor;
                 xSemaphoreGive(ROT_ENC_FLOOR);
@@ -140,7 +149,7 @@ void master_control_task(void* pvParameters)
             else
                 LCD_queue_put(1,1,"Wrong!");
 
-            vTaskDelay(500/portTICK_RATE_MS);
+            vTaskDelay(500 / portTICK_RATE_MS);
             break;
 
         default:
