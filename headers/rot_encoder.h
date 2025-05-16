@@ -19,6 +19,7 @@
 
 #include "small_sprints.h"
 #include "lcd.h"
+#include "elevator.h"
 #include "tm4c123gh6pm.h"
 #include "uart.h"
 
@@ -35,8 +36,10 @@ typedef enum {
     BUTTON
 } ROT_EVENT;
 
+void rotary_timer_callback(TimerHandle_t xTimer);
 void init_rotary();
 void rotary_task();
+
 
 bool rotary_queue_put(char c);
 

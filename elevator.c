@@ -8,7 +8,6 @@
 #include "elevator.h"
 #include "small_sprints.h"
 
-#define FORBIDDEN_FLOOR 13
 
 extern SemaphoreHandle_t E_MOVE_MUTEX;
 extern EventGroupHandle_t STATUS_LED_EVENT;

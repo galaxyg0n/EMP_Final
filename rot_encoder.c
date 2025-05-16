@@ -8,8 +8,10 @@
 #include "rot_encoder.h"
 
 extern QueueHandle_t ROTARY_Q;
-extern SemaphoreHandle_t ROT_ENC_OK, ROT_ENC_READY;
+extern SemaphoreHandle_t ROT_ENC_OK, ROT_ENC_FLOOR, ROT_ENC_FIX;
 extern uint8_t rot_enc_val;
+
+#define FULL_TURN 30
 
 void init_rotary()
 {
@@ -46,14 +48,26 @@ void init_rotary()
     NVIC_ST_CTRL_R   |= 0x2;
 }
 
+extern TimerHandle_t rot_debounce;
 uint8_t PREV_STATE_A = 0;
 uint8_t PREV_STATE_B = 0;
 ROT_EVENT rotary_event;
 
+void rotary_timer_callback(TimerHandle_t xTimer)
+{
+    if (xTimer == rot_debounce)
+        GPIO_PORTA_IM_R  |= (1 << DIGI_A) | (1 << DIGI_P2);     // Unmasking
+}
+
+static void set_timer(TimerHandle_t* xTimer)
+{
+    GPIO_PORTA_IM_R  &= ~((1 << DIGI_A) | (1 << DIGI_P2));     // Unmasking
+    xTimerStart(*xTimer,0);
+}
+
 void rotary_ISR_handler(void)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
     if(GPIO_PORTA_MIS_R & (1 << DIGI_P2))
     {
         GPIO_PORTA_ICR_R |= (1 << DIGI_P2);
@@ -61,7 +75,7 @@ void rotary_ISR_handler(void)
         xQueueSendToBackFromISR(ROTARY_Q, &rotary_event, &xHigherPriorityTaskWoken);
     }
 
-    if(GPIO_PORTA_RIS_R & (1 << DIGI_A))
+    if(GPIO_PORTA_MIS_R & (1 << DIGI_A))
     {
         GPIO_PORTA_ICR_R |= (1 << DIGI_A);
 
@@ -86,48 +100,65 @@ void rotary_ISR_handler(void)
             PREV_STATE_B = DIGI_B_STATE;
         }
     }
-
+    set_timer(&rot_debounce);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-
-
-
-
 }
-
 
 void rotary_task(void* pvParameters)
 {
     configASSERT(ROTARY_Q);
-    static char str[32];
-    ROT_EVENT event;
-
+    static ROT_EVENT fix_turn_direction = SCROLL_DOWN;
+    uint8_t str[32];
     while(1)
     {
-
-        xSemaphoreTake(ROT_ENC_READY, portMAX_DELAY);
-
-        while(event != BUTTON)
+        if (xSemaphoreTake(ROT_ENC_FLOOR, 0) == pdTRUE)
         {
-            xQueueReceive(ROTARY_Q, &event, portMAX_DELAY);
-
-            if(event == SCROLL_UP || event == SCROLL_DOWN)
+            xQueueReset(ROTARY_Q);
+            ROT_EVENT event = SCROLL_DOWN;
+            while(event != BUTTON)
             {
-                if(event == SCROLL_UP)
-                    rot_enc_val = (rot_enc_val < 20) ? rot_enc_val + 1 : 0;
-                else
-                    rot_enc_val = (rot_enc_val > 0) ? rot_enc_val - 1 : 20;
+                xQueueReceive(ROTARY_Q, &event, portMAX_DELAY);
+                if(event == SCROLL_UP || event == SCROLL_DOWN)
+                {
+                    if(event == SCROLL_UP)
+                        rot_enc_val = (rot_enc_val < 20) ? rot_enc_val + 1 : 0;
+                    else
+                        rot_enc_val = (rot_enc_val > 0) ? rot_enc_val - 1 : 20;
 
-                if(rot_enc_val == 13)
-                    rot_enc_val += (event == SCROLL_UP) ? 1 : -1;
-
+                    if(rot_enc_val == FORBIDDEN_FLOOR)
+                        rot_enc_val += (event == SCROLL_UP) ? 1 : -1;
+                }
                 snprintf(str, sizeof(str), "%d ", rot_enc_val);
                 LCD_queue_put(1, 2, str);
             }
-
-            GPIO_PORTA_IM_R  |= (1 << DIGI_A) | (1 << DIGI_P2);     // Unmasking
-            vTaskDelay(200 / portTICK_RATE_MS);
+            xSemaphoreGive(ROT_ENC_OK);
         }
-
-        xSemaphoreGive(ROT_ENC_OK);
+        if (xSemaphoreTake(ROT_ENC_FIX,0) == pdTRUE)
+        {
+            xQueueReset(ROTARY_Q);
+            ROT_EVENT event = SCROLL_UP;
+            fix_turn_direction = (fix_turn_direction == SCROLL_UP) ? SCROLL_DOWN : SCROLL_UP;
+            while(event != BUTTON)
+            {
+                xQueueReceive(ROTARY_Q, &event, portMAX_DELAY);
+                if (event == fix_turn_direction)
+                {
+                    if(++rot_enc_val>FULL_TURN)
+                        rot_enc_val = 0;
+                    snprintf(str, sizeof(str), " %d     ",(360/FULL_TURN)*rot_enc_val);
+                    LCD_queue_put(9,2,str);
+                }
+                else
+                    LCD_queue_put(9,2,"DIR_ERR");
+            }
+            if (rot_enc_val == FULL_TURN)
+                xSemaphoreGive(ROT_ENC_OK);
+            else
+            {
+                LCD_queue_put(9,2,"DEG_ERR"); //should be fixed as this impl. also reverses dir.
+                xSemaphoreGive(ROT_ENC_FIX);
+            }
+        }
+        vTaskDelay(50 / portTICK_RATE_MS);
     }
 }

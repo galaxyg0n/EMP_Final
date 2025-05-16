@@ -24,6 +24,7 @@
 
 #define FLIP 1
 #define NO_FLIP 0
+#define FORBIDDEN_FLOOR 13
 
 uint8_t is_user_in_elevator(uint8_t choice);
 void elevator_task(void* pvParameters);

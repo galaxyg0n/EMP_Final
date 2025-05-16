@@ -19,6 +19,7 @@
 #include "leds.h"
 #include "glob_def.h"
 #include "elevator.h"
+#include "potentiometer.h"
 
 #define TRIPS_TO_BREAK 4
 

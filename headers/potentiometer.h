@@ -19,7 +19,7 @@
 #include "semphr.h"
 #include "glob_def.h"
 
-
+#define MAX_POT 4096
 
 uint16_t get_adc();
 void init_adc();

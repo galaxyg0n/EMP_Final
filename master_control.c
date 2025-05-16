@@ -6,15 +6,16 @@
  */
 
 #include "master_control.h"
-
+#include <stdlib.h>
 
 
 
 extern QueueHandle_t SW1_E_Q;
-extern SemaphoreHandle_t E_MOVE_MUTEX,ROT_ENC_OK, ROT_ENC_READY;
+extern SemaphoreHandle_t E_MOVE_MUTEX, ROT_ENC_OK, ROT_ENC_FLOOR, ROT_ENC_FIX;
 extern EventGroupHandle_t STATUS_LED_EVENT;
 
 extern uint8_t dest_floor;
+extern uint16_t pot_val;
 volatile uint8_t rot_enc_val;
 
 
@@ -30,7 +31,7 @@ void master_control_task(void* pvParameters)
     static uint8_t str[32];
     const size_t size = sizeof(str);
 
-    static enum CONT_STATES {E_STILL,E_ARRIVED,E_PASS,E_MOVING,E_BROKEN} cont_state = E_STILL;
+    static enum CONT_STATES {E_INIT,E_STILL,E_ARRIVED,E_PASS,E_MOVING,E_BROKEN} cont_state = E_INIT;
     static uint8_t trips;
     xSemaphoreTake(E_MOVE_MUTEX,portMAX_DELAY);
     while(1)
@@ -38,6 +39,10 @@ void master_control_task(void* pvParameters)
         enum BUTTON_EVENTS be = BE_NO;
         switch(cont_state)
         {
+        case E_INIT:
+            LCD_queue_put(1,1, "Floor: 2");
+            cont_state = E_STILL;
+            break;
         case E_STILL:
             xQueueReceive(SW1_E_Q,&be,portMAX_DELAY);
             if (be == BE_LONG)
@@ -66,13 +71,41 @@ void master_control_task(void* pvParameters)
             break;
 
         case E_BROKEN:
-            LCD_queue_put(1,1,"clc");
-            LCD_queue_put(1,1,"Broken");
-            xEventGroupClearBits(STATUS_LED_EVENT, CONST_G);
-            xEventGroupSetBits(STATUS_LED_EVENT,LED_G|LED_R|LED_Y);
-            vTaskDelay(2000/portTICK_RATE_MS);
+        {
+            static enum BROKEN_STATES {BROKEN_INIT,BROKEN_MATCH,BROKEN_ENCODER} broken_state = BROKEN_INIT;
+            static uint16_t random_val;
+            switch(broken_state)
+            {
+            case BROKEN_INIT:
+                LCD_queue_put(1,1,"clc");
+                LCD_queue_put(1,1,"Elevator is\nbroken");
+                LCD_queue_put(1,1,"clc");
+                xEventGroupClearBits(STATUS_LED_EVENT, CONST_G);
+                xEventGroupSetBits(STATUS_LED_EVENT,LED_G|LED_R|LED_Y);
+                random_val = rand() % (MAX_POT+1);
+                broken_state = BROKEN_MATCH;
+                break;
+            case BROKEN_MATCH:
+                snprintf(str,size,"Match:%d\n      %d    ",random_val,pot_val);
+                LCD_queue_put(1,1,str);
+                //pot_val = random_val;
+                if (random_val == pot_val)
+                    broken_state = BROKEN_ENCODER;
+                break;
+            case BROKEN_ENCODER:
+                LCD_queue_put(1,1,"clc");
+                LCD_queue_put(1,1,"Use encoder:\nDegrees: 0");
+                rot_enc_val = 0;
+                xSemaphoreGive(ROT_ENC_FIX);
+                xSemaphoreTake(ROT_ENC_OK,portMAX_DELAY);
+                xEventGroupClearBits(STATUS_LED_EVENT, LED_G|LED_R|LED_Y);
+                broken_state = BROKEN_INIT;
+                cont_state = E_PASS;
+                break;
+            }
+            vTaskDelay(100/portTICK_RATE_MS);
             break;
-
+        }
         case E_PASS:
             LCD_queue_put(1,1,"clc");
             LCD_queue_put(1,1,"Password req.\nEnter: ");
@@ -95,10 +128,11 @@ void master_control_task(void* pvParameters)
                 LCD_queue_put(1,1,"Correct!");
                 vTaskDelay(500/portTICK_RATE_MS);
                 LCD_queue_put(1,1,"clc");
-                LCD_queue_put(1,1,"Destination:");
+                snprintf(str,size,"Destination:\n%d",dest_floor);
+                LCD_queue_put(1,1,str);
 
-                rot_enc_val = 0;
-                xSemaphoreGive(ROT_ENC_READY);
+                rot_enc_val = dest_floor;
+                xSemaphoreGive(ROT_ENC_FLOOR);
                 xSemaphoreTake(ROT_ENC_OK,portMAX_DELAY);
                 dest_floor = rot_enc_val;
                 cont_state = E_MOVING;

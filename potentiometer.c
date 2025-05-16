@@ -8,6 +8,7 @@
 
 #include "potentiometer.h"
 
+uint16_t pot_val;
 // -------------- Stolen from ITSL --------------
 uint16_t get_adc()
 {
@@ -65,10 +66,11 @@ void potentiometer_task(void* pvParameters)
     char buffer[10];
     while(1)
     {
+        pot_val = get_adc();
 
-        adcvalue_to_string(get_adc(), buffer, sizeof(buffer));
-        send_string_uart(buffer);
+//        adcvalue_to_string(get_adc(), buffer, sizeof(buffer));
+//        send_string_uart(buffer);
 
-        vTaskDelay(pdMS_TO_TICKS(500));
+        vTaskDelay(50/portTICK_RATE_MS);
     }
 }
