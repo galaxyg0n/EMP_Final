@@ -68,6 +68,8 @@ void master_control_task(void* pvParameters)
                     cont_state = E_PASS;
             } else
                 cont_state = E_STILL;
+            if (trips == 1)
+                srand((int)(xTaskGetTickCount()));
             break;
 
         case E_BROKEN:
@@ -82,7 +84,7 @@ void master_control_task(void* pvParameters)
                 LCD_queue_put(1,1,"clc");
                 xEventGroupClearBits(STATUS_LED_EVENT, CONST_G);
                 xEventGroupSetBits(STATUS_LED_EVENT,LED_G|LED_R|LED_Y);
-                random_val = rand() % (MAX_POT+1);
+                random_val = (rand() % (MAX_POT+1));
                 broken_state = BROKEN_MATCH;
                 break;
 
@@ -95,10 +97,10 @@ void master_control_task(void* pvParameters)
                     LCD_queue_put(1,1,str);
                     last_dis_val = pot_val;
                 }
-                //pot_val = random_val;
                 if (random_val == pot_val)
                     broken_state = BROKEN_ENCODER;
                 break;
+
             }
 
             case BROKEN_ENCODER:

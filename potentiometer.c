@@ -64,13 +64,18 @@ void send_string_uart(const char *str)
 void potentiometer_task(void* pvParameters)
 {
     char buffer[10];
+    uint16_t former_xvals[] = {0,0,0};
+    const uint8_t length = (uint8_t)(sizeof(former_xvals));
     while(1)
     {
-        pot_val = get_adc();
+        memcpy(former_xvals+1,former_xvals,sizeof(uint16_t)*(length-1));
+        former_xvals[0] = get_adc();
+        uint8_t i;
+        pot_val = 0;
+        for(i = 0; i<length; i++)
+            pot_val += former_xvals[i];
+        pot_val /= length;
 
-        //adcvalue_to_string(get_adc(), buffer, sizeof(buffer));
-        //send_string_uart(buffer);
-
-        vTaskDelay(50 / portTICK_RATE_MS);
+        vTaskDelay(10 / portTICK_RATE_MS);
     }
 }

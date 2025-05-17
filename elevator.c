@@ -7,12 +7,16 @@
 
 #include "elevator.h"
 #include "small_sprints.h"
+#include <math.h>
 
-
-extern SemaphoreHandle_t E_MOVE_MUTEX;
+extern SemaphoreHandle_t E_MOVE_MUTEX, ACC_UPD_MUTEX;
 extern EventGroupHandle_t STATUS_LED_EVENT;
 
 volatile uint8_t dest_floor = 0;
+
+
+volatile double acceleration = 1;
+double time = 1000;
 
 uint8_t is_user_in_elevator(uint8_t choice)
 {
@@ -28,11 +32,11 @@ void elevator_task(void* pvParameters)
     static int8_t user_floor = 0;
     static int8_t current_floor = 2;
 
+    static uint8_t log_msg[32];
     static uint8_t str[32];
     const size_t size = sizeof(str);
     while(1)
     {
-
         switch(ele_state)
         {
         case NO_MOTION:
@@ -55,11 +59,24 @@ void elevator_task(void* pvParameters)
             xEventGroupClearBits(STATUS_LED_EVENT,CONST_G|LED_R);
             xEventGroupSetBits(STATUS_LED_EVENT,LED_Y);
 
+            uint8_t og_floor = current_floor;
+
+            xSemaphoreTake(ACC_UPD_MUTEX,portMAX_DELAY);
+            double v_0 = 0;
+            double tot_time = 0;
             while(current_floor!=*destination)
             {
-                vTaskDelay(1000/portTICK_RATE_MS);
+                time = ((sqrt(v_0*v_0+2*acceleration))-v_0)/acceleration;
+                if (time<0)
+                    time = sqrt(2);
+                v_0 = v_0+acceleration*time;
+                tot_time += time;
+                time *= 1000;
+
+                vTaskDelay(time/portTICK_RATE_MS);
                 if ((current_floor+=direction) == floor_50_pct)
                 {
+                    acceleration*=-1;
                     xEventGroupClearBits(STATUS_LED_EVENT,LED_Y);
                     xEventGroupSetBits(STATUS_LED_EVENT,LED_R);
                 }
@@ -69,7 +86,12 @@ void elevator_task(void* pvParameters)
                 snprintf(str,size,"%d ",current_floor);
                 LCD_queue_put(8,1,str);
             }
+            acceleration *= -1;
+            time = 1000;
+            xSemaphoreGive(ACC_UPD_MUTEX);
 
+            snprintf(log_msg,sizeof(log_msg),"FROM:%d,TO:%d,IN:%ds,USER:%s\n",og_floor,current_floor,(uint8_t)tot_time,is_user_in_elevator(NO_FLIP)?"OUT":"IN");
+            uart_queue_put(log_msg);
             user_floor = current_floor;
             xEventGroupClearBits(STATUS_LED_EVENT,LED_R|LED_Y);
             xEventGroupSetBits(STATUS_LED_EVENT,CONST_G);

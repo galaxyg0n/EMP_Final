@@ -96,7 +96,7 @@
 #define configMAX_PRIORITIES        10
 //#define configMAX_PRIORITIES        ( ( unsigned portBASE_TYPE ) 10 )
 #define configMINIMAL_STACK_SIZE	( ( unsigned short ) 70 )
-#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 10000 ) )
+#define configTOTAL_HEAP_SIZE		( ( size_t ) ( 12000 ) )
 #define configMAX_TASK_NAME_LEN		( 10 )
 #define configUSE_TRACE_FACILITY	0
 #define configUSE_16_BIT_TICKS		0

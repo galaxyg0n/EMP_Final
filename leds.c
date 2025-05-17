@@ -7,6 +7,7 @@
 #include "leds.h"
 
 extern EventGroupHandle_t STATUS_LED_EVENT;
+extern double time;
 
 void init_leds()
 {
@@ -37,7 +38,8 @@ void led_task(void* pvParameters)
             GPIO_PORTF_DATA_R ^= eventBits;
         }
 
-        vTaskDelay(200/portTICK_RATE_MS);
+        double delay_time = time/5;
+        vTaskDelay(delay_time/portTICK_RATE_MS);
     }
 }
 

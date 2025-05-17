@@ -7,6 +7,10 @@
 
 #include "uart.h"
 
+QueueHandle_t uart_tx_queue;
+SemaphoreHandle_t ACC_UPD_MUTEX;
+extern double acceleration;
+
 void uart_init(uint32_t baud_rate, uint8_t data_bits, Paritybit parity_bit, uint8_t stop_bits)
 {
     //UART0
@@ -120,12 +124,12 @@ void uart_read(char* str, char end_char)
     while (1)
     {
         data = uart_read_byte();
+        uart_write_byte(data);
         if (data == end_char)
         {
             break;
         }
-        str[i] = data;
-        i++;
+        str[i++] = data;
     }
 }
 
@@ -153,23 +157,63 @@ void disable_FIFO()
 void uart_tx_task(void *pvParameters)
 {
     uart_tx_queue = xQueueCreate(UART_QUEUE_LEN,
-                                 sizeof(char));
+                                 sizeof(char)*32);
     configASSERT(uart_tx_queue); //Checks if the queue was created correctly
 
-    char txchar;
+    char txstr[32];
     while(1)
     {
-        if (xQueueReceive(uart_tx_queue, &txchar, 1) == pdPASS)
+        if (xQueueReceive(uart_tx_queue, txstr, 1) == pdPASS)
         {
-            uart_write_byte(txchar);
-            //uart_write_byte('\n');
+            uart_write(txstr);
         }
     }
 }
 
-bool uart_queue_put(char c)
+void uart_rx_task(void *pvParameters)
 {
-    return xQueueSendToBack(uart_tx_queue, &c, 10) == pdTRUE;
+    char rxchar[32];
+    char echo_msg[32];
+    const char inc_cmd[] = "inc";
+    const char dec_cmd[] = "dec";
+    const char cha_cmd[] = "cha";
+
+    while(1)
+    {
+        uart_read(rxchar,13);
+        if ((strcmp(rxchar,inc_cmd) == rxchar[(uint8_t)sizeof(inc_cmd)-1]))
+        {
+            xSemaphoreTake(ACC_UPD_MUTEX,portMAX_DELAY);
+            acceleration += ACC_CHANGE;
+            snprintf(echo_msg,sizeof(echo_msg),"Acc. increased to:%d.%d f/s^2\n\0",(uint8_t)(acceleration),((uint8_t)(acceleration*10))%10);
+            xSemaphoreGive(ACC_UPD_MUTEX);
+        }
+        if ((strcmp(rxchar,dec_cmd) == rxchar[(uint8_t)sizeof(dec_cmd)-1]))
+        {
+            xSemaphoreTake(ACC_UPD_MUTEX,portMAX_DELAY);
+            acceleration -= ACC_CHANGE;
+            snprintf(echo_msg,sizeof(echo_msg),"Acc. decreased to:%d.%d f/s^2\n\0",(uint8_t)(acceleration),((uint8_t)(acceleration*10))%10);
+            xSemaphoreGive(ACC_UPD_MUTEX);
+        }
+        if ((strcmp(rxchar,cha_cmd) == rxchar[(uint8_t)sizeof(cha_cmd)-1]))
+        {
+            xSemaphoreTake(ACC_UPD_MUTEX,portMAX_DELAY);
+            uint8_t change_amount = rxchar[(uint8_t)sizeof(cha_cmd)]-'0';
+            if (change_amount<=9 || change_amount>=0)
+                acceleration = change_amount;
+            snprintf(echo_msg,sizeof(echo_msg),"Acc. changed to:%d.%d f/s^2\n\0",(uint8_t)(acceleration),((uint8_t)(acceleration*10))%10);
+            xSemaphoreGive(ACC_UPD_MUTEX);
+        }
+        uart_queue_put(echo_msg);
+    }
+
+}
+
+bool uart_queue_put(char *str)
+{
+    char queueStr[32];
+    memcpy(queueStr, str, sizeof(char)*32);
+    return xQueueSendToBack(uart_tx_queue, queueStr, 10) == pdTRUE;
 }
 
 

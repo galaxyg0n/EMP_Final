@@ -13,7 +13,10 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "Task.h"
+#include "semphr.h"
 
+#include <string.h>
+#include "small_sprints.h"
 #include "tm4c123gh6pm.h"
 //#include "clock.h"
 
@@ -47,11 +50,13 @@
 
 #define UART_QUEUE_LEN 20
 
+#define ACC_CHANGE 0.1
+
 typedef enum {NO_PARITY,
               ODD_PARITY,
               EVEN_PARITY} Paritybit;
 
-QueueHandle_t uart_tx_queue;
+
 
 void uart_init(uint32_t baudrate, uint8_t databits, Paritybit paritybit, uint8_t stopbits);
 
@@ -75,7 +80,8 @@ bool rx_data_ready();
 bool tx_data_ready();
 
 void uart_tx_task(void *pvParameters);
-bool uart_queue_put(char c);
+void uart_rx_task(void *pvParameters);
+bool uart_queue_put(char *str);
 
 
 #endif /* UART_H_ */
