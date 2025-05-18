@@ -14,7 +14,7 @@
 <br>
 
 - 4-digit code must be entered (divisible by 8) ✅
-    - On correct password, choose destinated floor with rotary encoder (press to confirm)
+    - On correct password, choose destinated floor with rotary encoder (press to confirm)✅
 
 <br>
 
@@ -26,19 +26,19 @@
 <br>
 
 - Quicks
-  - Elevator breaks on every 4th trip (indicated by all LEDs flashing at the same time)
-  - Restart the elevator by setting the potentiometer to a random value displayed on the screen
-    - The rotary encoder must also be turned 360° from it's starting position (Direction changes every time)
-    - If the rotary encoder is turned the wrong way an error message will be displayed
-    - Press encoder to confirm
+  - Elevator breaks on every 4th trip (indicated by all LEDs flashing at the same time)✅
+  - Restart the elevator by setting the potentiometer to a random value displayed on the screen✅
+    - The rotary encoder must also be turned 360° from it's starting position (Direction changes every time)✅
+    - If the rotary encoder is turned the wrong way an error message will be displayed✅
+    - Press encoder to confirm✅
 
 - Extra
   - UART logging
-    - Log each trip of the elevator
+    - Log each trip of the elevator✅
   - PC control 
     - Request logs
-    - Control acceleration with PC
-  - Blinking frequency should increase and decrease with the acceleration
+    - Control acceleration with PC✅
+  - Blinking frequency should increase and decrease with the acceleration✅
   
 ---
 
