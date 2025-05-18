@@ -29,7 +29,7 @@ void init_matrix(void)
 
 void sweep_keypad_task(void *pvParameters)
 {
-    keypadStruct queue_msg;
+    KEYPAD_STRUCT queue_msg;
     configASSERT(MATRIX_Q);
 
     uint8_t col[3] = {COL_1, COL_2, COL_3};
@@ -78,19 +78,19 @@ void sweep_keypad_task(void *pvParameters)
         if(!key_detected)
             last_key = 0;
 
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(10/portTICK_RATE_MS);
     }
 
 }
 
 
-bool keypad_queue_put(keypadStruct queueStruct)
+bool keypad_queue_put(KEYPAD_STRUCT queueStruct)
 {
     return xQueueSendToBack(MATRIX_Q, &queueStruct, 10 / portTICK_RATE_MS) == pdTRUE;
 }
 
 
-bool keypad_queue_get(keypadStruct *returnStruct)
+bool keypad_queue_get(KEYPAD_STRUCT *returnStruct)
 {
     if(MATRIX_Q != NULL)
     {
@@ -98,25 +98,4 @@ bool keypad_queue_get(keypadStruct *returnStruct)
     }
     return pdFALSE;
 }
-
-void keypad_consumer_task(void *pvParameters)
-{
-    keypadStruct receivedKey;
-
-    while(1)
-    {
-        if(keypad_queue_get(&receivedKey))
-        {
-            uart_queue_put(receivedKey.keyPressed);
-
-            // Structure as a uint8_t buffer to comply with LCD_queue_put parameter
-            uint8_t buff[16] = {0};
-            buff[0] = receivedKey.keyPressed;
-            LCD_queue_put(1, 1, buff);
-        }
-
-        vTaskDelay(10 / portTICK_RATE_MS);
-    }
-}
-
 

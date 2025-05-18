@@ -4,17 +4,19 @@
  *  Created on: 3. apr. 2025
  *      Author: karlj
  */
+//Includes
 #include "button.h"
-#include "lcd.h"
 
-extern QueueHandle_t SW1_E_Q, LCD_Q;
-extern TimerHandle_t sw1_timer;
+//Variables
+extern QueueHandle_t SW1_E_Q;
+extern TimerHandle_t SW1_TIMER;
 uint8_t sw1_timeout;
 
+//Functions
 //Function: Sets timeout event when timer runs out
 void button_timer_callback(TimerHandle_t xTimer)
 {
-    if (xTimer == sw1_timer)
+    if (xTimer == SW1_TIMER)
         sw1_timeout = 1;
 }
 
@@ -61,7 +63,7 @@ void sw1_task(void* pvParameters)
            if(button_pressed)
            {
                sw1_state = BS_FP;
-               set_timer(&sw1_timer);
+               set_timer(&SW1_TIMER);
            }
            break;
        case BS_FP:

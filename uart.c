@@ -7,11 +7,11 @@
 
 #include "uart.h"
 
-QueueHandle_t uart_tx_queue;
 SemaphoreHandle_t ACC_UPD_MUTEX;
+extern QueueHandle_t UART_TX_Q;
 extern double acceleration;
 
-void uart_init(uint32_t baud_rate, uint8_t data_bits, Paritybit parity_bit, uint8_t stop_bits)
+void init_uart(uint32_t baud_rate, uint8_t data_bits, PARITY_BIT parity_bit, uint8_t stop_bits)
 {
     //UART0
     SYSCTL_RCGCUART_R |= SYSCTL_RCGCUART_R0;
@@ -60,7 +60,7 @@ void set_baud_rate(uint32_t baud_rate)
     UART0_FBRD_R = BRD & 0x0000003F;
 }
 
-void set_parity(Paritybit parity)
+void set_parity(PARITY_BIT parity)
 {
     switch(parity)
     {
@@ -126,9 +126,8 @@ void uart_read(char* str, char end_char)
         data = uart_read_byte();
         uart_write_byte(data);
         if (data == end_char)
-        {
             break;
-        }
+
         str[i++] = data;
     }
 }
@@ -156,24 +155,18 @@ void disable_FIFO()
 
 void uart_tx_task(void *pvParameters)
 {
-    uart_tx_queue = xQueueCreate(UART_QUEUE_LEN,
-                                 sizeof(char)*32);
-    configASSERT(uart_tx_queue); //Checks if the queue was created correctly
-
-    char txstr[32];
+    char txstr[STR_SIZE];
     while(1)
     {
-        if (xQueueReceive(uart_tx_queue, txstr, 1) == pdPASS)
-        {
+        if (xQueueReceive(UART_TX_Q, txstr, 1) == pdPASS)
             uart_write(txstr);
-        }
     }
 }
 
 void uart_rx_task(void *pvParameters)
 {
-    char rxchar[32];
-    char echo_msg[32];
+    char rxchar[STR_SIZE];
+    char echo_msg[STR_SIZE];
     const char inc_cmd[] = "inc";
     const char dec_cmd[] = "dec";
     const char cha_cmd[] = "cha";
@@ -211,9 +204,9 @@ void uart_rx_task(void *pvParameters)
 
 bool uart_queue_put(char *str)
 {
-    char queueStr[32];
-    memcpy(queueStr, str, sizeof(char)*32);
-    return xQueueSendToBack(uart_tx_queue, queueStr, 10) == pdTRUE;
+    char queueStr[STR_SIZE];
+    memcpy(queueStr, str, sizeof(char)*STR_SIZE);
+    return xQueueSendToBack(UART_TX_Q, queueStr, 10) == pdTRUE;
 }
 
 

@@ -35,14 +35,13 @@
 #define ROW_4 0x00 // PE3
 
 #define KEYPAD_QUEUE_LEN 20
-#define KEYPAD_QUEUE_ITEM sizeof(keypadStruct)
+#define KEYPAD_QUEUE_ITEM sizeof(KEYPAD_STRUCT)
 
 void init_matrix(void);
 void sweep_keypad_task(void *pvParameters);
-void keypad_consumer_task(void *pvParameters);
 
-bool keypad_queue_put(keypadStruct queueStruct);
-bool keypad_queue_get(keypadStruct *returnStruct);
+bool keypad_queue_put(KEYPAD_STRUCT queueStruct);
+bool keypad_queue_get(KEYPAD_STRUCT *returnStruct);
 
 
 #endif /* HEADERS_MATRIX_H_ */

@@ -21,6 +21,8 @@
 #include "master_control.h"
 #include "leds.h"
 #include "tm4c123gh6pm.h"
+#include "small_sprints.h"
+#include <math.h>
 
 #define FLIP 1
 #define NO_FLIP 0

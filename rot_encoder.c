@@ -18,24 +18,6 @@ void init_rotary()
     SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOA;
     while ((SYSCTL_PRGPIO_R & (1 << 0)) == 0);
 
-    /*
-    // Standard setup
-    GPIO_PORTA_DEN_R |= 0xE0;
-    GPIO_PORTA_PUR_R |= 0xE0;
-
-
-    GPIO_PORTA_IS_R  &= ~(1 << DIGI_A);                     // Clear mask
-
-    GPIO_PORTA_IEV_R |= ~((1 << DIGI_A) | (1 << DIGI_P2));  // Single falling edge detection
-
-    GPIO_PORTA_ICR_R |= (1 << DIGI_A) | (1 << DIGI_P2);     // Clear interrupts
-
-    GPIO_PORTA_IM_R  |= (1 << DIGI_A) | (1 << DIGI_P2);
-
-
-    NVIC_EN0_R       |= (1 << 0);
-    NVIC_ST_CTRL_R   |= 0x2;
-    */
     GPIO_PORTA_DEN_R |= 0xE0;
     GPIO_PORTA_PUR_R |= 0xE0;
 
@@ -48,14 +30,14 @@ void init_rotary()
     NVIC_ST_CTRL_R   |= 0x2;
 }
 
-extern TimerHandle_t rot_debounce;
+extern TimerHandle_t ROT_DEBOUNCE;
 uint8_t PREV_STATE_A = 0;
 uint8_t PREV_STATE_B = 0;
 ROT_EVENT rotary_event;
 
 void rotary_timer_callback(TimerHandle_t xTimer)
 {
-    if (xTimer == rot_debounce)
+    if (xTimer == ROT_DEBOUNCE)
         GPIO_PORTA_IM_R  |= (1 << DIGI_A) | (1 << DIGI_P2);     // Unmasking
 }
 
@@ -100,7 +82,7 @@ void rotary_ISR_handler(void)
             PREV_STATE_B = DIGI_B_STATE;
         }
     }
-    set_timer(&rot_debounce);
+    set_timer(&ROT_DEBOUNCE);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
@@ -108,7 +90,7 @@ void rotary_task(void* pvParameters)
 {
     configASSERT(ROTARY_Q);
     static ROT_EVENT fix_turn_direction = SCROLL_DOWN;
-    uint8_t str[32];
+    char str[STR_SIZE];
     while(1)
     {
         if (xSemaphoreTake(ROT_ENC_FLOOR, 0) == pdTRUE)
@@ -129,7 +111,7 @@ void rotary_task(void* pvParameters)
                         rot_enc_val += (event == SCROLL_UP) ? 1 : -1;
                 }
                 snprintf(str, sizeof(str), "%d ", rot_enc_val);
-                LCD_queue_put(1, 2, str);
+                lcd_queue_put(1, 2, str);
             }
             xSemaphoreGive(ROT_ENC_OK);
         }
@@ -146,16 +128,16 @@ void rotary_task(void* pvParameters)
                     if(++rot_enc_val>FULL_TURN)
                         rot_enc_val = 0;
                     snprintf(str, sizeof(str), " %d     ",(360/FULL_TURN)*rot_enc_val);
-                    LCD_queue_put(9,2,str);
+                    lcd_queue_put(9,2,str);
                 }
                 else
-                    LCD_queue_put(9,2,"DIR_ERR");
+                    lcd_queue_put(9,2,"DIR_ERR");
             }
             if (rot_enc_val == FULL_TURN)
                 xSemaphoreGive(ROT_ENC_OK);
             else
             {
-                LCD_queue_put(9,2,"DEG_ERR"); //should be fixed as this impl. also reverses dir.
+                lcd_queue_put(9,2,"DEG_ERR"); //should be fixed as this impl. also reverses dir.
                 xSemaphoreGive(ROT_ENC_FIX);
             }
         }

@@ -10,15 +10,17 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
+
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "Task.h"
 #include "semphr.h"
 
-#include <string.h>
+#include "glob_def.h"
 #include "small_sprints.h"
 #include "tm4c123gh6pm.h"
-//#include "clock.h"
+
 
 #define UART_SYS_CLK 16000000UL
 #define CLKDIV 16
@@ -48,20 +50,18 @@
 #define RXFF 6 //Receive FIFO Full
 #define TXFE 7 //Transmit FIFO Empty
 
-#define UART_QUEUE_LEN 20
-
 #define ACC_CHANGE 0.1
 
 typedef enum {NO_PARITY,
               ODD_PARITY,
-              EVEN_PARITY} Paritybit;
+              EVEN_PARITY} PARITY_BIT;
 
 
 
-void uart_init(uint32_t baudrate, uint8_t databits, Paritybit paritybit, uint8_t stopbits);
+void init_uart(uint32_t baudrate, uint8_t databits, PARITY_BIT paritybit, uint8_t stopbits);
 
 void set_baud_rate(uint32_t baud_rate);
-void set_parity(Paritybit parity);
+void set_parity(PARITY_BIT parity);
 void set_data_bits(uint8_t data_bits);
 void set_stop_bits(uint8_t stop_bits);
 

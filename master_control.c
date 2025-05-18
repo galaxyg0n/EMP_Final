@@ -6,9 +6,6 @@
  */
 
 #include "master_control.h"
-#include <stdlib.h>
-
-
 
 extern QueueHandle_t SW1_E_Q;
 extern SemaphoreHandle_t E_MOVE_MUTEX, ROT_ENC_OK, ROT_ENC_FLOOR, ROT_ENC_FIX;
@@ -21,15 +18,14 @@ volatile uint8_t rot_enc_val;
 
 uint8_t input_key()
 {
-    keypadStruct returnStruct;
+    KEYPAD_STRUCT returnStruct;
     while(!keypad_queue_get(&returnStruct));
     return returnStruct.keyPressed;
 }
 void master_control_task(void* pvParameters)
 {
 
-    static uint8_t str[32];
-    const size_t size = sizeof(str);
+    static char str[STR_SIZE];
 
     static enum CONT_STATES {E_INIT,E_STILL,E_ARRIVED,E_PASS,E_MOVING,E_BROKEN} cont_state = E_INIT;
     static uint8_t trips;
@@ -40,7 +36,7 @@ void master_control_task(void* pvParameters)
         switch(cont_state)
         {
         case E_INIT:
-            LCD_queue_put(1,1, "Floor: 2");
+            lcd_queue_put(1,1, "Floor: 2");
             cont_state = E_STILL;
             break;
         case E_STILL:
@@ -57,7 +53,7 @@ void master_control_task(void* pvParameters)
             break;
 
         case E_ARRIVED:
-            LCD_queue_put(1,2,"Arrived!       ");
+            lcd_queue_put(1,2,"Arrived!       ");
             vTaskDelay(750/portTICK_RATE_MS);
             //Check user in elevator state and flip it
             if (is_user_in_elevator(FLIP))
@@ -79,9 +75,9 @@ void master_control_task(void* pvParameters)
             switch(broken_state)
             {
             case BROKEN_INIT:
-                LCD_queue_put(1,1,"clc");
-                LCD_queue_put(1,1,"Elevator is\nbroken");
-                LCD_queue_put(1,1,"clc");
+                lcd_queue_put(1,1,"clc");
+                lcd_queue_put(1,1,"Elevator is\nbroken");
+                lcd_queue_put(1,1,"clc");
                 xEventGroupClearBits(STATUS_LED_EVENT, CONST_G);
                 xEventGroupSetBits(STATUS_LED_EVENT,LED_G|LED_R|LED_Y);
                 random_val = (rand() % (MAX_POT+1));
@@ -93,8 +89,8 @@ void master_control_task(void* pvParameters)
                 static uint16_t last_dis_val = 0xFFFF;
                 if(abs((int)pot_val - (int)last_dis_val) > 3) // Reduces display updates on noise and small movements
                 {
-                    snprintf(str, size, "Match:%d\n      %d    ", random_val, pot_val);
-                    LCD_queue_put(1,1,str);
+                    snprintf(str, sizeof(str), "Match:%d\n      %d    ", random_val, pot_val);
+                    lcd_queue_put(1,1,str);
                     last_dis_val = pot_val;
                 }
                 if (random_val == pot_val)
@@ -104,8 +100,8 @@ void master_control_task(void* pvParameters)
             }
 
             case BROKEN_ENCODER:
-                LCD_queue_put(1,1,"clc");
-                LCD_queue_put(1,1,"Use encoder:\nDegrees: 0");
+                lcd_queue_put(1,1,"clc");
+                lcd_queue_put(1,1,"Use encoder:\nDegrees: 0");
                 rot_enc_val = 0;
                 xSemaphoreGive(ROT_ENC_FIX);
                 xSemaphoreTake(ROT_ENC_OK,portMAX_DELAY);
@@ -118,8 +114,8 @@ void master_control_task(void* pvParameters)
             break;
         }
         case E_PASS:
-            LCD_queue_put(1,1,"clc");
-            LCD_queue_put(1,1,"Password req.\nEnter: ");
+            lcd_queue_put(1,1,"clc");
+            lcd_queue_put(1,1,"Password req.\nEnter: ");
 
             uint8_t num_pos = 7;
             uint16_t password = 0;
@@ -128,19 +124,19 @@ void master_control_task(void* pvParameters)
             for (pass_pos = 1000; pass_pos; pass_pos/=10)
             {
                 uint8_t entered_val = input_key();
-                snprintf(str,size,"%c",entered_val);
+                snprintf(str,sizeof(str),"%c",entered_val);
                 password += (entered_val-'0')*pass_pos;
-                LCD_queue_put(num_pos++,2,str);
+                lcd_queue_put(num_pos++,2,str);
             }
 
-            LCD_queue_put(1,1,"clc");
+            lcd_queue_put(1,1,"clc");
             if (!(password%8))
             {
-                LCD_queue_put(1, 1, "Correct!");
+                lcd_queue_put(1, 1, "Correct!");
                 vTaskDelay(500 / portTICK_RATE_MS);
-                LCD_queue_put(1, 1, "clc");
-                snprintf(str, size, "Destination:\n%d", dest_floor);
-                LCD_queue_put(1, 1, str);
+                lcd_queue_put(1, 1, "clc");
+                snprintf(str, sizeof(str), "Destination:\n%d", dest_floor);
+                lcd_queue_put(1, 1, str);
 
                 rot_enc_val = dest_floor;
                 xSemaphoreGive(ROT_ENC_FLOOR);
@@ -149,7 +145,7 @@ void master_control_task(void* pvParameters)
                 cont_state = E_MOVING;
             }
             else
-                LCD_queue_put(1,1,"Wrong!");
+                lcd_queue_put(1,1,"Wrong!");
 
             vTaskDelay(500 / portTICK_RATE_MS);
             break;

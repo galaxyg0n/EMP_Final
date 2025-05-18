@@ -17,6 +17,7 @@
 #include "timers.h"
 #include "semphr.h"
 
+#include "glob_def.h"
 #include "small_sprints.h"
 #include "lcd.h"
 #include "elevator.h"

@@ -9,40 +9,8 @@
  */
 
 /***************** Includes *******************/
-#include <LCD.h>
+#include "lcd.h"
 
-/***************** Defines ********************/
-//Pin numbers
-#define LCD_DATA_PINS 0xF0 //Data are on port C
-#define RS 0x04 //E and RS are on port D
-#define E 0x08
-
-//Data & Instruction
-#define DATA 1
-#define INSTR 0
-
-//Function bits
-#define FS 5 //Function set
-#define DOUBLE_LINE 0x0F
-#define SINGLE_LINE 0
-
-//Display control bits
-#define DISPLAY_CONTROL 3
-#define DISPLAY_BIT_EN 2
-#define CURSOR_BIT_EN 1
-#define BLINK_BIT_EN 0
-
-//Entry mode bits
-#define ENTRY_CONTROL 2
-#define INCR_BIT_EN 1
-#define DISP_SHIFT_BIT_EN 0
-
-//Display clear
-#define CLEAR_DISPLAY 0x01
-
-//Cursor positions
-#define DDRAM_BIT_EN 7
-#define SECOND_ROW 0x40
 
 /***************** Const. *********************/
 /***************** Variables ******************/
@@ -163,11 +131,11 @@ void init_lcd()
     lcd_clear(); //Clear display if something should be on it already
 }
 
-void LCD_task(void* pvParameters)
+void lcd_task(void* pvParameters)
 {
-    init_lcd();
+    init_lcd(); //Initialization is done in task as it needs vTaskDelay() to function
 
-    static LCD_Put to_write;
+    static LCD_PUT to_write;
     const uint8_t clear_cmd[] = "clc";
 
     while(1)
@@ -184,9 +152,9 @@ void LCD_task(void* pvParameters)
 }
 
 
-bool LCD_queue_put(uint8_t x, uint8_t y, uint8_t str[32])
+bool lcd_queue_put(uint8_t x, uint8_t y, uint8_t str[STR_SIZE])
 {
-    LCD_Put queueStruct;
+    LCD_PUT queueStruct;
     queueStruct.x = x;
     queueStruct.y = y;
     memcpy(queueStruct.str, str, sizeof(queueStruct.str));
@@ -195,7 +163,7 @@ bool LCD_queue_put(uint8_t x, uint8_t y, uint8_t str[32])
 }
 
 
-bool LCD_queue_get(LCD_Put *returnStruct)
+bool lcd_queue_get(LCD_PUT *returnStruct)
 {
     if(LCD_Q != NULL)
     {
