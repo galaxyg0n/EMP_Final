@@ -1,144 +1,164 @@
 /***************** Header *********************/
 /*
- * Univeristy of Southern Denmark
+ * University of Southern Denmark
  * Embedded Programming (EMP)
  *
  * MODULENAME: lcd.c
- * PROJECT: Assignment_3
- * DESCRIPTION: See module specification .h-file
+ * PROJECT: Elevator project
+ * DESCRIPTION: See module specification in .h file
  */
 
 /***************** Includes *******************/
 #include "lcd.h"
 
-
-/***************** Const. *********************/
+/***************** Constants ******************/
 /***************** Variables ******************/
 extern QueueHandle_t LCD_Q;
 
+/***************** Local Function Declarations ***************/
+static void toggle_E(void);
+static void lcd_write(uint8_t is_data, uint8_t data);
 
-/***************** Functions ******************/
+/***************** Local Functions ***************/
 static void toggle_E()
 /************************************
-*Function: Internal function, toggles the enable bit
+* Function : Toggles the LCD enable bit (E)
+* Argument : None
+* Returns  : None
 ************************************/
 {
-    GPIO_PORTD_DATA_R ^= E; //Toggle the read write enable bit
-    GPIO_PORTD_DATA_R ^= E;
-    vTaskDelay(5/portTICK_RATE_MS);     //Give the LCD time to process/write
+    GPIO_PORTD_DATA_R ^= E;      // Toggle enable bit
+    GPIO_PORTD_DATA_R ^= E;      // Toggle again to latch
+    vTaskDelay(5 / portTICK_RATE_MS); // Wait for LCD to process
 }
 
 static void lcd_write(uint8_t is_data, uint8_t data)
 /************************************
-*Input   : The data to be written (data), aswell as which register (is_data)
-*Function: Internal function. Writes data to the LCD display either DATA register or INSTR register
+* Function : Writes to the LCD data or instruction register
+* Argument : is_data - 1 if writing data, 0 if writing instruction
+*            data    - 8-bit data to write
+* Returns  : None
 ************************************/
 {
-    GPIO_PORTD_DATA_R &= ~E; //Disable r/w
-
+    GPIO_PORTD_DATA_R &= ~E;           // Disable write
     if (is_data)
-        GPIO_PORTD_DATA_R |= RS; //Set data write
+        GPIO_PORTD_DATA_R |= RS;       // Select data register
     else
-        GPIO_PORTD_DATA_R &= ~RS; //Set Instr. write
+        GPIO_PORTD_DATA_R &= ~RS;      // Select instruction register
 
-    //Write 4-MSB
-    GPIO_PORTC_DATA_R = data; //Put the data on GPIO port C pins
-    toggle_E(); //EN r/w then DB
+    GPIO_PORTC_DATA_R = data;          // Send high nibble
+    toggle_E();
 
-    //Write 4-LSB in the same way
-    GPIO_PORTC_DATA_R = (data<<4);
+    GPIO_PORTC_DATA_R = (data << 4);   // Send low nibble
     toggle_E();
 }
 
+/***************** Global Functions ***************/
+
 void lcd_clear()
-//See .h-file for function description
+/************************************
+* See .h file for description
+************************************/
 {
-    lcd_write(INSTR,CLEAR_DISPLAY); //Write the CLEAR DISPLAY instruction
+    lcd_write(INSTR, CLEAR_DISPLAY);
 }
 
 void lcd_displaySettings(uint8_t is_on, uint8_t cursor_on, uint8_t blinking_on)
-//See .h-file for function description
+/************************************
+* See .h file for description
+************************************/
 {
-    //Writes the chosen bits at the right positions according to the data sheet
-    uint8_t write_val = (1<<DISPLAY_CONTROL)+(is_on<<DISPLAY_BIT_EN)+(cursor_on<<CURSOR_BIT_EN)+(blinking_on<<BLINK_BIT_EN);
-    lcd_write(INSTR,write_val);
+    uint8_t write_val = (1 << DISPLAY_CONTROL) |
+                        (is_on << DISPLAY_BIT_EN) |
+                        (cursor_on << CURSOR_BIT_EN) |
+                        (blinking_on << BLINK_BIT_EN);
+    lcd_write(INSTR, write_val);
 }
 
 void lcd_entrySettings(uint8_t addrIncr, uint8_t dispShift)
-//See .h-file for function description
+/************************************
+* See .h file for description
+************************************/
 {
-    //Writes the chosen bits at the right positions according to the data sheet
-    uint8_t write_val = (1<<ENTRY_CONTROL)+(addrIncr<<INCR_BIT_EN)+(dispShift<<DISP_SHIFT_BIT_EN);
-    lcd_write(INSTR,write_val);
+    uint8_t write_val = (1 << ENTRY_CONTROL) |
+                        (addrIncr << INCR_BIT_EN) |
+                        (dispShift << DISP_SHIFT_BIT_EN);
+    lcd_write(INSTR, write_val);
 }
 
 void lcd_setCursor(uint8_t row, uint8_t column)
-//See .h-file for function description
+/************************************
+* See .h file for description
+************************************/
 {
-    //Writes the chosen bits at the right positions according to the data sheet
-    uint8_t position_val = (row-1)*(SECOND_ROW)+(column-1);
-    uint8_t write_val = (1<<DDRAM_BIT_EN)+position_val;
-    lcd_write(INSTR,write_val);
+    uint8_t position_val = (row - 1) * SECOND_ROW + (column - 1);
+    uint8_t write_val = (1 << DDRAM_BIT_EN) + position_val;
+    lcd_write(INSTR, write_val);
 }
 
 void lcd_print_char(uint8_t char_to_print)
-//See .h-file for function description
+/************************************
+* See .h file for description
+************************************/
 {
-    lcd_write(DATA,char_to_print);
+    lcd_write(DATA, char_to_print);
 }
 
 void lcd_print_str(uint8_t* str)
-//See .h-file for function description
+/************************************
+* See .h file for description
+************************************/
 {
-    do //Loops through char array and prints each
+    do
     {
-        if(*str == '\n')
-            lcd_setCursor(2,1);
+        if (*str == '\n')
+            lcd_setCursor(2, 1);
         else
-            lcd_print_char(*str); //Prints char
-    }while(*(++str));
+            lcd_print_char(*str);
+    } while (*(++str));
 }
 
 void init_lcd()
-//See .h-file for function description
+/************************************
+* See .h file for description
+************************************/
 {
-    //General pin init.
-    int dummy;
-    SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOC + SYSCTL_RCGC2_GPIOD + SYSCTL_RCGC2_GPIOF; //Enable clock on pins
+    volatile int dummy;
+    SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOC | SYSCTL_RCGC2_GPIOD | SYSCTL_RCGC2_GPIOF;
     dummy = SYSCTL_RCGC2_R;
 
-    //Sets data direction
     GPIO_PORTC_DIR_R |= LCD_DATA_PINS;
-    GPIO_PORTD_DIR_R |= RS+E;
+    GPIO_PORTD_DIR_R |= RS | E;
     GPIO_PORTC_DEN_R |= LCD_DATA_PINS;
-    GPIO_PORTD_DEN_R |= RS+E;
+    GPIO_PORTD_DEN_R |= RS | E;
 
-    //Specific init. for 4-bit data transfer
-    GPIO_PORTD_DATA_R &= ~(E); //DB r/w
-    GPIO_PORTC_DATA_R |= (1<<FS); //Function select 4-bit fct.
-    GPIO_PORTD_DATA_R &= ~(RS); //Select instr. reg.
+    GPIO_PORTD_DATA_R &= ~E;
+    GPIO_PORTC_DATA_R |= (1 << FS);
+    GPIO_PORTD_DATA_R &= ~RS;
 
+    vTaskDelay(100 / portTICK_RATE_MS);
 
-    vTaskDelay(100 / portTICK_RATE_MS); //Wait for 100ms to let LCD start
-
-    //Function select runs twice to init. 4-bit
     toggle_E();
-    lcd_write(INSTR,(1<<FS)+DOUBLE_LINE); //Here LCD is also set to 2X Line and font
+    lcd_write(INSTR, (1 << FS) | DOUBLE_LINE);
 
-    lcd_entrySettings(1,0); //Increment address no display shift
-    lcd_displaySettings(1,0,0); //Display on, cursor on, no cursor blinking
-
-    lcd_clear(); //Clear display if something should be on it already
+    lcd_entrySettings(1, 0);
+    lcd_displaySettings(1, 0, 0);
+    lcd_clear();
 }
 
 void lcd_task(void* pvParameters)
+/************************************
+* Function : LCD display FreeRTOS task
+* Argument : pvParameters (not used)
+* Returns  : None
+************************************/
 {
-    init_lcd(); //Initialization is done in task as it needs vTaskDelay() to function
+    init_lcd();
 
     static LCD_PUT to_write;
     const uint8_t clear_cmd[] = "clc";
 
-    while(1)
+    while (1)
     {
         xQueueReceive(LCD_Q, &to_write, portMAX_DELAY);
         if (!strcmp(to_write.str, clear_cmd))
@@ -151,8 +171,13 @@ void lcd_task(void* pvParameters)
     }
 }
 
-
 bool lcd_queue_put(uint8_t x, uint8_t y, uint8_t str[STR_SIZE])
+/************************************
+* Function : Send string to LCD via FreeRTOS queue
+* Argument : x, y  - cursor coordinates
+*            str   - string to display
+* Returns  : true if successfully queued
+************************************/
 {
     LCD_PUT queueStruct;
     queueStruct.x = x;
@@ -162,14 +187,16 @@ bool lcd_queue_put(uint8_t x, uint8_t y, uint8_t str[STR_SIZE])
     return xQueueSendToBack(LCD_Q, &queueStruct, 10 / portTICK_RATE_MS) == pdTRUE;
 }
 
-
 bool lcd_queue_get(LCD_PUT *returnStruct)
+/************************************
+* Function : Retrieve next LCD write command from queue
+* Argument : returnStruct - pointer to store retrieved value
+* Returns  : true if successful
+************************************/
 {
-    if(LCD_Q != NULL)
+    if (LCD_Q != NULL)
     {
         return xQueueReceive(LCD_Q, returnStruct, 10 / portTICK_RATE_MS) == pdTRUE;
     }
     return pdFALSE;
 }
-
-

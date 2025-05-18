@@ -1,79 +1,109 @@
+/***************** Source File ****************/
 /*
- * potentiometer.c
+ * University of Southern Denmark
+ * Embedded Programming (EMP)
  *
- *  Created on: 15 May 2025
- *      Author: mathi
+ * MODULENAME: potentiometer.c
+ * PROJECT: Elevator project
+ * DESCRIPTION: Source file for potentiometer ADC reading and filtering
+ *
+ * 
  */
-
 
 #include "potentiometer.h"
 
+/***************** Global Variables ***********/
 uint16_t pot_val;
-// -------------- Stolen from ITSL --------------
+
+/***************** Functions ******************/
+
+/************************************
+* Input   : None
+* Output  : ADC result (0-4095)
+* Function: Returns the latest ADC conversion result from FIFO3
+************************************/
 uint16_t get_adc()
 {
-    return( ADC0_SSFIFO3_R );
+    return ADC0_SSFIFO3_R;
 }
 
+/************************************
+* Input   : None
+* Output  : None
+* Function: Initializes ADC0 and GPIOB for analog input
+************************************/
 void init_adc()
 {
     SYSCTL_RCGC0_R |= SYSCTL_RCGC0_ADC0;
     SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOB;
 
-    // Set ADC0 Sequencer priorities.
-    // SS3(bit12-13): Priority = 0 ; Highest
-    // SS2(bit8-9):   Priority = 1
-    // SS1(bit4-5):   Priority = 2
-    // SS0(bit0-1):   Priority = 3 ; Lowest
+    // Set ADC0 Sequencer priorities
     ADC0_SSPRI_R = 0x00000123;
 
-    //Disable all sequencers
+    // Disable all sequencers
     ADC0_ACTSS_R = 0;
 
-    // Trigger for Sequencer 3 (bit 12-15) = 0xF = Always.
+    // Set sequencer 3 trigger to always
     ADC0_EMUX_R = 0x0000F000;
 
-    //sample multiplexer input, sequencer 3 select, ADC 11 (0x0B) enable.
+    // Select ADC input channel 11 for sequencer 3
     ADC0_SSMUX3_R = 0x0B;
 
-    //ADC sample sequence control 3 = END0
-    ADC0_SSCTL3_R =  0x00000002;
+    // Configure sequence control (END0)
+    ADC0_SSCTL3_R = 0x00000002;
 
-    //enable sequencer 3
+    // Enable sequencer 3
     ADC0_ACTSS_R = 0x00000008;
 
-    // Start conversion at sequencer 3
+    // Start conversion on sequencer 3
     ADC0_PSSI_R = 0x08;
 }
-// ---------------------------------------------
 
+/************************************
+* Input   : adc_value (ADC reading), return_buf (output buffer), buf_size (buffer size)
+* Output  : None
+* Function: Converts an ADC value to string and stores in return_buf
+************************************/
 void adcvalue_to_string(uint16_t adc_value, char* return_buf, size_t buf_size)
 {
-    sprintf(return_buf, "%u\n", adc_value);
+    snprintf(return_buf, buf_size, "%u\n", adc_value);
 }
 
-
+/************************************
+* Input   : str (null-terminated string)
+* Output  : None
+* Function: Sends a string to UART, character by character
+************************************/
 void send_string_uart(const char *str)
 {
-    while (*str)  // Loop until null terminator
+    while (*str)
     {
         uart_queue_put(*str++);
     }
 }
 
+/************************************
+* Input   : pvParameters (unused)
+* Output  : None
+* Function: FreeRTOS task that filters ADC values using a moving average
+************************************/
 void potentiometer_task(void* pvParameters)
 {
     char buffer[10];
-    uint16_t former_xvals[] = {0,0,0};
-    const uint8_t length = (uint8_t)(sizeof(former_xvals));
+    uint16_t former_xvals[] = {0, 0, 0};
+    const uint8_t length = (uint8_t)(sizeof(former_xvals) / sizeof(uint16_t));
+
     while(1)
     {
-        memcpy(former_xvals+1,former_xvals,sizeof(uint16_t)*(length-1));
+        // Shift history
+        memcpy(former_xvals + 1, former_xvals, sizeof(uint16_t) * (length - 1));
         former_xvals[0] = get_adc();
-        uint8_t i;
+
+        // Calculate average
         pot_val = 0;
-        for(i = 0; i<length; i++)
+        for(uint8_t i = 0; i < length; i++)
             pot_val += former_xvals[i];
+
         pot_val /= length;
 
         vTaskDelay(10 / portTICK_RATE_MS);
