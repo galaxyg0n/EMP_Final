@@ -35,6 +35,7 @@
 #define FLIP 1
 #define NO_FLIP 0
 #define FORBIDDEN_FLOOR 13
+#define SEC_TO_MS 1000
 
 /***************** Functions ******************/
 /************************************

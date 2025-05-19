@@ -242,38 +242,38 @@ void uart_rx_task(void *pvParameters)
 
     while (1)
     {
-        uart_read(rxchar, 13); // 13 = Enter key (carriage return)
+        uart_read(rxchar, CARRIAGE_RETURN); // Enter key (carriage return)
 
-        if (strcmp(rxchar, inc_cmd) == 0)
+        if (strcmp(rxchar, inc_cmd) == 0) //Checks if it is the increment command
         {
             xSemaphoreTake(ACC_UPD_MUTEX, portMAX_DELAY);
             acceleration += ACC_CHANGE;
             snprintf(echo_msg, sizeof(echo_msg),
                      "Acc. increased to:%d.%d f/s^2\n",
-                     (uint8_t)(acceleration),
-                     ((uint8_t)(acceleration * 10)) % 10);
+                     (uint8_t)(acceleration),              // Non-decimal point
+                     ((uint8_t)(acceleration * 10)) % 10); // Decimal point
             xSemaphoreGive(ACC_UPD_MUTEX);
         }
-        else if (strcmp(rxchar, dec_cmd) == 0)
+        else if (strcmp(rxchar, dec_cmd) == 0) //Checks for dec command
         {
             xSemaphoreTake(ACC_UPD_MUTEX, portMAX_DELAY);
             acceleration -= ACC_CHANGE;
             snprintf(echo_msg, sizeof(echo_msg),
                      "Acc. decreased to:%d.%d f/s^2\n",
-                     (uint8_t)(acceleration),
-                     ((uint8_t)(acceleration * 10)) % 10);
+                     (uint8_t)(acceleration),              // Non-decimal point
+                     ((uint8_t)(acceleration * 10)) % 10); // Decimal point
             xSemaphoreGive(ACC_UPD_MUTEX);
         }
-        else if (strncmp(rxchar, cha_cmd, sizeof(cha_cmd)-1) == 0)
+        else if (strncmp(rxchar, cha_cmd, sizeof(cha_cmd)-1) == 0) //Checks for cha command
         {
             xSemaphoreTake(ACC_UPD_MUTEX, portMAX_DELAY);
-            uint8_t change_amount = rxchar[sizeof(cha_cmd)-1] - '0';
+            uint8_t change_amount = rxchar[sizeof(cha_cmd)] - '0'; //Change is specified by written number
             if (change_amount <= 9)
                 acceleration = change_amount;
             snprintf(echo_msg, sizeof(echo_msg),
                      "Acc. changed to:%d.%d f/s^2\n",
-                     (uint8_t)(acceleration),
-                     ((uint8_t)(acceleration * 10)) % 10);
+                     (uint8_t)(acceleration),              // Non-decimal point
+                     ((uint8_t)(acceleration * 10)) % 10); // Decimal point
             xSemaphoreGive(ACC_UPD_MUTEX);
         }
 

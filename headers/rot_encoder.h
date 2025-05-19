@@ -40,6 +40,7 @@
 #define ROTARY_QUEUE_LEN    20
 #define ROTARY_QUEUE_ITEM   sizeof(ROT_EVENT)
 
+
 /***************** Typedefs *******************/
 typedef enum {
     SCROLL_UP,

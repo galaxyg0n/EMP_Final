@@ -55,18 +55,18 @@ void master_control_task(void* pvParameters)
         switch(cont_state)
         {
         case E_INIT:
-            lcd_queue_put(1,1, "Floor: 2");
+            lcd_queue_put(1,1, "Floor: 2"); // Write beginning floor on startup
             cont_state = E_STILL;
             break;
 
         case E_STILL:
-            xQueueReceive(SW1_E_Q, &be, portMAX_DELAY);
+            xQueueReceive(SW1_E_Q, &be, portMAX_DELAY); // Wait for button event
             if (be == BE_LONG)
                 cont_state = E_MOVING;
             break;
 
         case E_MOVING:
-            xSemaphoreGive(E_MOVE_MUTEX);
+            xSemaphoreGive(E_MOVE_MUTEX);   // Give mutex, makes elevator move in elevator task
             vTaskDelay(100 / portTICK_RATE_MS);
             xSemaphoreTake(E_MOVE_MUTEX, portMAX_DELAY);
             cont_state = E_ARRIVED;
@@ -76,22 +76,23 @@ void master_control_task(void* pvParameters)
             lcd_queue_put(1,2,"Arrived!       ");
             vTaskDelay(750 / portTICK_RATE_MS);
 
-            if (is_user_in_elevator(FLIP))
+            if (is_user_in_elevator(FLIP)) // Flips user_in_elevator state in/out and checks
             {
-                if (!(++trips % TRIPS_TO_BREAK))
+                if (!(++trips % TRIPS_TO_BREAK)) // Every fourth trip it breaks
                     cont_state = E_BROKEN;
                 else
-                    cont_state = E_PASS;
+                    cont_state = E_PASS; // If user has just enetered elevator password is required
             }
             else
-                cont_state = E_STILL;
+                cont_state = E_STILL; // If user has just left elevator it just goes back to still
 
-            if (trips == 1)
+            if (trips == 1) // On the first trip the "random" generator gets seeded
                 srand((int)(xTaskGetTickCount()));
             break;
 
         case E_BROKEN:
         {
+            // When broken a new nested state machine goes through the different important states durign the process
             static enum BROKEN_STATES {BROKEN_INIT,BROKEN_MATCH,BROKEN_ENCODER} broken_state = BROKEN_INIT;
             static uint16_t random_val;
 
@@ -109,8 +110,8 @@ void master_control_task(void* pvParameters)
 
             case BROKEN_MATCH:
             {
-                static uint16_t last_dis_val = 0xFFFF;
-                if (abs((int)pot_val - (int)last_dis_val) > 3)
+                static uint16_t last_dis_val = MAX_POT;
+                if (abs((int)pot_val - (int)last_dis_val) > 3) // Emulates mechanical "stickiness"
                 {
                     snprintf(str, sizeof(str), "Match:%d\n      %d    ", random_val, pot_val);
                     lcd_queue_put(1,1,str);
@@ -125,7 +126,7 @@ void master_control_task(void* pvParameters)
                 lcd_queue_put(1,1,"clc");
                 lcd_queue_put(1,1,"Use encoder:\nDegrees: 0");
                 rot_enc_val = 0;
-                xSemaphoreGive(ROT_ENC_FIX);
+                xSemaphoreGive(ROT_ENC_FIX); // Give the semaphore to the rotary encoder to run the fix procedure
                 xSemaphoreTake(ROT_ENC_OK, portMAX_DELAY);
                 xEventGroupClearBits(STATUS_LED_EVENT, LED_G | LED_R | LED_Y);
                 broken_state = BROKEN_INIT;
@@ -141,15 +142,15 @@ void master_control_task(void* pvParameters)
             lcd_queue_put(1,1,"clc");
             lcd_queue_put(1,1,"Password req.\nEnter: ");
 
-            uint8_t num_pos = 7;
-            uint16_t password = 0;
+            uint8_t num_pos = 7; // Position where first number should be placed on screen
+            uint16_t password = 0; // Password starts at zero
             uint16_t pass_pos;
 
-            for (pass_pos = 1000; pass_pos; pass_pos /= 10)
+            for (pass_pos = 1000; pass_pos; pass_pos /= 10) // For loop for 4 iterations
             {
-                uint8_t entered_val = input_key();
+                uint8_t entered_val = input_key(); // Key entered on the matrix keyboard
                 snprintf(str, sizeof(str), "%c", entered_val);
-                password += (entered_val - '0') * pass_pos;
+                password += (entered_val - '0') * pass_pos; // Change to integer and add to password
                 lcd_queue_put(num_pos++, 2, str);
             }
 
@@ -164,10 +165,10 @@ void master_control_task(void* pvParameters)
                 snprintf(str, sizeof(str), "Destination:\n%d", dest_floor);
                 lcd_queue_put(1,1,str);
 
-                rot_enc_val = dest_floor;
-                xSemaphoreGive(ROT_ENC_FLOOR);
+                rot_enc_val = dest_floor; // Set original encoder value to current floor
+                xSemaphoreGive(ROT_ENC_FLOOR); // Give the semaphore to the rotary encoder to run the choosing floor procedure
                 xSemaphoreTake(ROT_ENC_OK, portMAX_DELAY);
-                dest_floor = rot_enc_val;
+                dest_floor = rot_enc_val; // Set destination value
                 cont_state = E_MOVING;
             }
             else

@@ -42,8 +42,8 @@ void init_rotary()
     SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOA;
     while ((SYSCTL_PRGPIO_R & (1 << 0)) == 0);
 
-    GPIO_PORTA_DEN_R |= 0xE0;         // Enable digital on PA5-7
-    GPIO_PORTA_PUR_R |= 0xE0;         // Enable pull-up resistors on PA5-7
+    GPIO_PORTA_DEN_R |= (1 << DIGI_A) + (1 << DIGI_B) + (1 << DIGI_P2);         // Enable digital on PA5-7
+    GPIO_PORTA_PUR_R |= (1 << DIGI_A) + (1 << DIGI_B) + (1 << DIGI_P2);         // Enable pull-up resistors on PA5-7
 
     GPIO_PORTA_IS_R  &= ~(1 << DIGI_A);  // Edge-sensitive interrupts on DIGI_A
     GPIO_PORTA_IBE_R  = (1 << DIGI_A);    // Both edges interrupt on DIGI_A
@@ -100,7 +100,7 @@ void rotary_ISR_handler(void)
         uint8_t DIGI_A_STATE = (GPIO_PORTA_DATA_R & (1 << DIGI_A)) >> DIGI_A;
         uint8_t DIGI_B_STATE = (GPIO_PORTA_DATA_R & (1 << DIGI_B)) >> DIGI_B;
 
-        if(DIGI_A_STATE != PREV_STATE_A)
+        if(DIGI_A_STATE != PREV_STATE_A) //Checking the type of rotary event based on order of A and B states
         {
             if((PREV_STATE_A == 0) && (DIGI_A_STATE == 1))
             {
@@ -118,7 +118,7 @@ void rotary_ISR_handler(void)
         }
     }
 
-    set_timer(&ROT_DEBOUNCE);
+    set_timer(&ROT_DEBOUNCE); //Debounce timer
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
@@ -135,7 +135,7 @@ void rotary_task(void* pvParameters)
 
     while(1)
     {
-        if (xSemaphoreTake(ROT_ENC_FLOOR, 0) == pdTRUE)
+        if (xSemaphoreTake(ROT_ENC_FLOOR, 0) == pdTRUE) // Making the rotary encoder choose floor
         {
             xQueueReset(ROTARY_Q);
             ROT_EVENT event = SCROLL_DOWN;
@@ -158,11 +158,11 @@ void rotary_task(void* pvParameters)
             xSemaphoreGive(ROT_ENC_OK);
         }
 
-        if (xSemaphoreTake(ROT_ENC_FIX, 0) == pdTRUE)
+        if (xSemaphoreTake(ROT_ENC_FIX, 0) == pdTRUE) // Making the rotary encoder fix elevator by turning 360 degrees
         {
             xQueueReset(ROTARY_Q);
             ROT_EVENT event = SCROLL_UP;
-            fix_turn_direction = (fix_turn_direction == SCROLL_UP) ? SCROLL_DOWN : SCROLL_UP;
+            fix_turn_direction = (fix_turn_direction == SCROLL_UP) ? SCROLL_DOWN : SCROLL_UP; // Changes direction that should be turned
 
             while(event != BUTTON)
             {

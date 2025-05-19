@@ -17,7 +17,7 @@ extern EventGroupHandle_t STATUS_LED_EVENT;
 
 volatile uint8_t dest_floor = 0;
 volatile double acceleration = 1;
-double time = 1000;
+double time = SEC_TO_MS;
 
 uint8_t is_user_in_elevator(uint8_t choice)
 /************************************
@@ -55,8 +55,8 @@ void elevator_task(void* pvParameters)
         switch(ele_state)
         {
             case NO_MOTION:
-                xSemaphoreTake(E_MOVE_MUTEX, portMAX_DELAY);
-                volatile uint8_t* destination = (is_user_in_elevator(NO_FLIP)) ? &dest_floor : &user_floor;
+                xSemaphoreTake(E_MOVE_MUTEX, portMAX_DELAY); //If move mutex is given get ready to move
+                volatile uint8_t* destination = (is_user_in_elevator(NO_FLIP)) ? &dest_floor : &user_floor; //Choose if elevator should move to user or chosen dest floor
                 int8_t direction = (current_floor > *destination) ? -1 : 1;
                 ele_state = INIT_MOTION;
                 break;
@@ -70,6 +70,7 @@ void elevator_task(void* pvParameters)
 
             case IN_MOTION:
             {
+                //Checking if floor 13 is part of the trip
                 uint8_t extra_floor = ((*destination > FORBIDDEN_FLOOR && current_floor < FORBIDDEN_FLOOR) || 
                                        (*destination < FORBIDDEN_FLOOR && current_floor > FORBIDDEN_FLOOR));
                 uint8_t floor_50_pct = (*destination + current_floor - extra_floor) / 2;
@@ -77,25 +78,25 @@ void elevator_task(void* pvParameters)
                 xEventGroupClearBits(STATUS_LED_EVENT, CONST_G | LED_R);
                 xEventGroupSetBits(STATUS_LED_EVENT, LED_Y);
 
-                uint8_t og_floor = current_floor;
+                uint8_t og_floor = current_floor; //Original floor used to log the trip
 
-                xSemaphoreTake(ACC_UPD_MUTEX, portMAX_DELAY);
+                xSemaphoreTake(ACC_UPD_MUTEX, portMAX_DELAY); //Make sure acceleration can't update during trip
                 double v_0 = 0;
                 double tot_time = 0;
 
                 while(current_floor != *destination)
                 {
-                    time = ((sqrt(v_0 * v_0 + 2 * acceleration)) - v_0) / acceleration;
+                    time = ((sqrt(v_0 * v_0 + 2 * acceleration)) - v_0) / acceleration; //Calculate time to move a floor based on constant acceleration
                     if (time < 0)
-                        time = sqrt(2);
-                    v_0 = v_0 + acceleration * time;
-                    tot_time += time;
-                    time *= 1000;
+                        time = sqrt(2); //If time becomes negative do to rounding errors, set it as constant
+                    v_0 = v_0 + acceleration * time; //New speed at current floor
+                    tot_time += time; //Total time is used when logging the trip
+                    time *= SEC_TO_MS; //Time is calculated in seconds, this makes it into millisec
 
                     vTaskDelay(time / portTICK_RATE_MS);
                     if ((current_floor += direction) == floor_50_pct)
                     {
-                        acceleration *= -1;
+                        acceleration *= -1; //Start decceleration
                         xEventGroupClearBits(STATUS_LED_EVENT, LED_Y);
                         xEventGroupSetBits(STATUS_LED_EVENT, LED_R);
                     }
@@ -107,14 +108,15 @@ void elevator_task(void* pvParameters)
                 }
                 if (acceleration < 0)
                     acceleration *= -1;
-                time = 1000;
+                time = SEC_TO_MS;
 
                 xSemaphoreGive(ACC_UPD_MUTEX);
 
+                //Logging trip
                 snprintf(log_msg, sizeof(log_msg), "FROM:%d,TO:%d,IN:%ds,USER:%s\n", og_floor, current_floor, (uint8_t)tot_time, is_user_in_elevator(NO_FLIP) ? "OUT" : "IN");
                 uart_queue_put(log_msg);
 
-                user_floor = current_floor;
+                user_floor = current_floor; //User is now at same floor as elevator
                 xEventGroupClearBits(STATUS_LED_EVENT, LED_R | LED_Y);
                 xEventGroupSetBits(STATUS_LED_EVENT, CONST_G);
                 ele_state = NO_MOTION;

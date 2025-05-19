@@ -27,13 +27,12 @@
 #include "glob_def.h"
 
 /***************** Defines ********************/
-#define MAX_POT 4096
+#define MAX_POT 4095
 
 /***************** Prototypes *****************/
 uint16_t get_adc(void);
 void init_adc(void);
 void potentiometer_task(void* pvParameters);
-void adcvalue_to_string(uint16_t adc_value, char* return_buf, size_t buf_size);
-void send_string_uart(const char *str);
+
 
 #endif /* HEADERS_POTENTIOMETER_H_ */

@@ -60,48 +60,26 @@ void init_adc()
 }
 
 /************************************
-* Input   : adc_value (ADC reading), return_buf (output buffer), buf_size (buffer size)
-* Output  : None
-* Function: Converts an ADC value to string and stores in return_buf
-************************************/
-void adcvalue_to_string(uint16_t adc_value, char* return_buf, size_t buf_size)
-{
-    snprintf(return_buf, buf_size, "%u\n", adc_value);
-}
-
-/************************************
-* Input   : str (null-terminated string)
-* Output  : None
-* Function: Sends a string to UART, character by character
-************************************/
-void send_string_uart(const char *str)
-{
-    while (*str)
-    {
-        uart_queue_put(*str++);
-    }
-}
-
-/************************************
 * Input   : pvParameters (unused)
 * Output  : None
 * Function: FreeRTOS task that filters ADC values using a moving average
 ************************************/
 void potentiometer_task(void* pvParameters)
 {
-    char buffer[10];
     uint16_t former_xvals[] = {0, 0, 0};
     const uint8_t length = (uint8_t)(sizeof(former_xvals) / sizeof(uint16_t));
 
     while(1)
     {
+        // Makes a short simple moving average to try and remove noise without introducing to much delay
         // Shift history
         memcpy(former_xvals + 1, former_xvals, sizeof(uint16_t) * (length - 1));
         former_xvals[0] = get_adc();
 
         // Calculate average
         pot_val = 0;
-        for(uint8_t i = 0; i < length; i++)
+        uint8_t i;
+        for(i = 0; i < length; i++)
             pot_val += former_xvals[i];
 
         pot_val /= length;

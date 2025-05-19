@@ -29,11 +29,11 @@ void init_matrix(void)
     volatile unsigned long delay;
     delay = SYSCTL_RCGC2_R;
 
-    GPIO_PORTA_DIR_R |= 0x1C;   // PA2, PA3, PA4 as output (columns)
-    GPIO_PORTA_DEN_R |= 0x1C;
+    GPIO_PORTA_DIR_R |= COL_1 + COL_2 + COL_3;   // PA2, PA3, PA4 as output (columns)
+    GPIO_PORTA_DEN_R |= COL_1 + COL_2 + COL_3;
 
-    GPIO_PORTE_DEN_R |= 0x0F;   // PE0-PE3 as input (rows)
-    GPIO_PORTE_PDR_R |= 0x0F;   // Enable pull-down resistors
+    GPIO_PORTE_DEN_R |= (1 << ROW_1) + (1 << ROW_2) + (1 << ROW_3) + (1 << ROW_4);   // PE0-PE3 as input (rows)
+    GPIO_PORTE_PDR_R |= (1 << ROW_1) + (1 << ROW_2) + (1 << ROW_3) + (1 << ROW_4);   // Enable pull-down resistors
 }
 
 

@@ -38,7 +38,7 @@ void init_leds()
     // Enable digital function for these pins
     GPIO_PORTF_DEN_R |= LED_R + LED_Y + LED_G;
 
-    // Turn off LEDs initially (assuming active low)
+    // Turn off LEDs initially
     GPIO_PORTF_DATA_R |= LED_R + LED_Y + LED_G;
 }
 
@@ -80,7 +80,7 @@ void led_task(void* pvParameters)
             GPIO_PORTF_DATA_R ^= eventBits;
         }
 
-        double delay_time = time / 5;
+        double delay_time = time / 5; //Based on the time variable calculated in elevator
         vTaskDelay((TickType_t)(delay_time / portTICK_RATE_MS));
     }
 }

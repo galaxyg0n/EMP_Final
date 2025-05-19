@@ -58,6 +58,7 @@
 #define TXFE            7   // Transmit FIFO empty
 
 #define ACC_CHANGE      0.1
+#define CARRIAGE_RETURN 13
 
 /***************** Types ****************/
 typedef enum {
