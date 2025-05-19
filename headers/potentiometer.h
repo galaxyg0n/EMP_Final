@@ -28,6 +28,11 @@
 
 /***************** Defines ********************/
 #define MAX_POT 4095
+#define END0 0x02
+#define SEQ3 0x08
+#define SEQ_PRI 0x00000123
+#define EM3 12
+#define ADC_INPUT_CHANNEL 0x0B
 
 /***************** Prototypes *****************/
 uint16_t get_adc(void);

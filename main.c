@@ -50,7 +50,7 @@ int main(void)
 
     // Create software timers
     SW1_TIMER = xTimerCreate("Button_timeout", 500 / portTICK_RATE_MS, pdFALSE, NULL, button_timer_callback);           // Button debounce timeout
-    ROT_DEBOUNCE = xTimerCreate("Rotary encode debounce", 25 / portTICK_RATE_MS, pdFALSE, NULL, rotary_timer_callback); // Rotary encoder debounce
+    ROT_DEBOUNCE = xTimerCreate("Rotary encode debounce", 50 / portTICK_RATE_MS, pdFALSE, NULL, rotary_timer_callback); // Rotary encoder debounce
 
     // Create queues
     SW1_E_Q   = xQueueCreate(SW1_E_QUEUE_LEN, sizeof(uint8_t));                 // Button event queue

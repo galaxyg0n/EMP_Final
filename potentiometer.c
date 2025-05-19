@@ -38,25 +38,25 @@ void init_adc()
     SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOB;
 
     // Set ADC0 Sequencer priorities
-    ADC0_SSPRI_R = 0x00000123;
+    ADC0_SSPRI_R = SEQ_PRI;
 
     // Disable all sequencers
     ADC0_ACTSS_R = 0;
 
     // Set sequencer 3 trigger to always
-    ADC0_EMUX_R = 0x0000F000;
+    ADC0_EMUX_R = (0xF << EM3);
 
     // Select ADC input channel 11 for sequencer 3
-    ADC0_SSMUX3_R = 0x0B;
+    ADC0_SSMUX3_R = ADC_INPUT_CHANNEL;
 
     // Configure sequence control (END0)
-    ADC0_SSCTL3_R = 0x00000002;
+    ADC0_SSCTL3_R = END0;
 
     // Enable sequencer 3
-    ADC0_ACTSS_R = 0x00000008;
+    ADC0_ACTSS_R = SEQ3;
 
     // Start conversion on sequencer 3
-    ADC0_PSSI_R = 0x08;
+    ADC0_PSSI_R = SEQ3;
 }
 
 /************************************
